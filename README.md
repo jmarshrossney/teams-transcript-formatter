@@ -7,10 +7,11 @@ Currently it is limited to one-to-one meetings with transcripts downloaded in th
 
 ## Installation
 
+
 ### From GitHub
 
 ```sh
-$ python -m pip install git+https://github.com/jmarshrossney/teams-transcript-formatter
+python -m pip install git+https://github.com/jmarshrossney/teams-transcript-formatter
 ```
 
 ### From source
@@ -18,9 +19,9 @@ $ python -m pip install git+https://github.com/jmarshrossney/teams-transcript-fo
 If you want to make changes to the source code you can clone the repository and install in 'editable' mode,
 
 ```sh
-$ git clone https://github.com/jmarshrossney/teams-transcript-formatter
-$ cd teams-transcript-formatter
-$ python -m pip install -e .
+git clone https://github.com/jmarshrossney/teams-transcript-formatter
+cd teams-transcript-formatter
+python -m pip install -e .
 ```
 
 ## Usage

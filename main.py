@@ -15,13 +15,6 @@ class BadInterviewerName(Exception):
     pass
 
 
-config = dotenv_values(".env")
-try:
-    INTERVIEWER = config["INTERVIEWER"]
-except KeyError as e:
-    raise BadInterviewerName(
-        "Please set `INTERVIEWER='Interviewer Name'` in `.env`"
-    ) from e
 
 parser = ArgumentParser(
     prog="format_transcript",
@@ -43,7 +36,7 @@ parser.add_argument(
 )
 
 
-def _format_transcript(transcript: str) -> str:
+def _format_transcript(transcript: str, interviewer: str) -> str:
 
     # Strip first line which should just contain `WEBVTT`, then
     # split the transcript into chunks of speech
@@ -78,14 +71,14 @@ def _format_transcript(transcript: str) -> str:
     # Check that there are 2 speakers, one of which is INTERVIEWER
     speakers = df["speaker"].unique()
     assert len(speakers) == 2
-    if INTERVIEWER not in speakers:
+    if interviewer not in speakers:
         raise BadInterviewerName(
             "Interviewer '{INTERVIEWER}' is not present in this transcript"
         )
 
     # Replace names with 'Interviewer' and 'Student'
     df["speaker"] = df["speaker"].apply(
-        lambda name: "Interviewer" if name == INTERVIEWER else "Student"
+        lambda name: "Interviewer" if name == interviewer else "Student"
     )
 
     # Format in human-readable way, appropriate for annotation
@@ -109,7 +102,15 @@ def main(files: list[Path], output_dir: Path) -> None:
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if not INTERVIEWER:
+    config = dotenv_values(".env")
+    try:
+        interviewer = config["INTERVIEWER"]
+    except KeyError as e:
+        raise BadInterviewerName(
+            "Please set `INTERVIEWER='Interviewer Name'` in `.env`"
+        ) from e
+
+    if not interviewer:
         raise BadInterviewerName(
             "Please set `INTERVIEWER` to the name of the interviewer as it appears in the transcript"
         )
@@ -120,7 +121,7 @@ def main(files: list[Path], output_dir: Path) -> None:
         with infile.open("r") as f:
             raw_transcript = f.read()
 
-        formatted_transcript = _format_transcript(raw_transcript)
+        formatted_transcript = _format_transcript(raw_transcript, interviewer)
 
         outfile = (output_dir / (infile.stem + "_formatted")).with_suffix(".txt")
         assert not outfile.exists()

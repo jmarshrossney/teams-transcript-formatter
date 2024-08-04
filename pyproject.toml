@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "teams-transcript-formatter"
+version = "0.1.0"
+dependencies = ["pandas", "python-dotenv"]
+requires-python = ">= 3.11"
+authors = [{name = "Joe Marsh Rossney", email = "17361029+jmarshrossney@users.noreply.github.com"}]
+description = "Human-readable Microsoft Teams meeting transcripts"
+readme = "README.md"
+
+[project.scripts]
+format-transcripts = "main:cli"

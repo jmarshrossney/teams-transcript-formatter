@@ -7,13 +7,11 @@ from collections.abc import Iterable
 from pathlib import Path
 import re
 
-from dotenv import dotenv_values
 import pandas as pd
 
 
 class BadInterviewerName(Exception):
     pass
-
 
 
 parser = ArgumentParser(
@@ -33,6 +31,12 @@ parser.add_argument(
     type=Path,
     help="directory in which to save the formatted `.txt` files",
     default=".",
+)
+parser.add_argument(
+    "-i",
+    "--interviewer",
+    type=str,
+    help="name of interviewer as it appears in the transcript",
 )
 
 
@@ -73,7 +77,7 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
     assert len(speakers) == 2
     if interviewer not in speakers:
         raise BadInterviewerName(
-            "Interviewer '{INTERVIEWER}' is not present in this transcript"
+            f"Interviewer '{interviewer}' is not present in this transcript"
         )
 
     # Replace names with 'Interviewer' and 'Student'
@@ -81,39 +85,35 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
         lambda name: "Interviewer" if name == interviewer else "Student"
     )
 
+    # Add '<' or '>' prefix
+    df["prefix"] = df["speaker"].apply(
+        lambda name: ">" if name == "Interviewer" else "<"
+    )
+
     # Format in human-readable way, appropriate for annotation
+    # TODO: replace hard-coded f-string with template file
     formatted_transcript = "\n\n".join(
         [
-            f"{speaker} ({time}):\n\t{speech}"
-            for (time, speaker, speech) in df.itertuples(index=False, name=None)
+            f"{prefix} {speaker} | {speech} | {time}"
+            for (time, speaker, speech, prefix) in df.itertuples(index=False, name=None)
         ]
     )
 
     return formatted_transcript
 
 
-def main(files: list[Path], output_dir: Path) -> None:
+def main(files: list[Path], output_dir: Path, interviewer: str) -> None:
     """Format a given list of `.vtt` transcript files and save the results."""
 
     assert isinstance(files, Iterable)
     assert len(files) > 0
     assert all([isinstance(file, Path) for file in files])
     assert isinstance(output_dir, Path)
+    assert interviewer is not None
+    assert isinstance(interviewer, str)
+    assert len(interviewer) > 0
 
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    config = dotenv_values(".env")
-    try:
-        interviewer = config["INTERVIEWER"]
-    except KeyError as e:
-        raise BadInterviewerName(
-            "Please set `INTERVIEWER='Interviewer Name'` in `.env`"
-        ) from e
-
-    if not interviewer:
-        raise BadInterviewerName(
-            "Please set `INTERVIEWER` to the name of the interviewer as it appears in the transcript"
-        )
 
     for infile in files:
 
@@ -135,7 +135,7 @@ def main(files: list[Path], output_dir: Path) -> None:
 def cli():
     """Wrapper around `main` that parses arguments from the command-line."""
     args = parser.parse_args()
-    main(args.files, args.output)
+    main(args.files, args.output, args.interviewer)
 
 
 if __name__ == "__main__":

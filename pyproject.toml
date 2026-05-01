@@ -15,7 +15,7 @@ dependencies = []
 Repository = "https://github.com/jmarshrossney/teams-transcript-formatter"
 
 [project.scripts]
-format-transcripts = "teams_transcript_formatter.main:cli"
+teams-transcript-formatter = "teams_transcript_formatter.main:cli"
 
 [dependency-groups]
 dev = [

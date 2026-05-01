@@ -14,7 +14,7 @@ This package is not yet on PyPI, so you must install directly from the GitHub re
 No installation required — run it once-off with [`uvx`](https://docs.astral.sh/uv/guides/tools/#running-tools):
 
 ```sh
-uvx --from git+https://github.com/jmarshrossney/teams-transcript-formatter format-transcripts -i "John Smith" transcript.vtt
+uvx --from git+https://github.com/jmarshrossney/teams-transcript-formatter teams-transcript-formatter -i "John Smith" transcript.vtt
 ```
 
 ### Install as a tool with `uv`
@@ -25,10 +25,10 @@ Install globally with `uv tool install`:
 uv tool install git+https://github.com/jmarshrossney/teams-transcript-formatter
 ```
 
-After installation, `format-transcripts` will be available on your PATH:
+After installation, `teams-transcript-formatter` will be available on your PATH:
 
 ```sh
-format-transcripts -i "John Smith" transcript.vtt
+teams-transcript-formatter -i "John Smith" transcript.vtt
 ```
 
 ### Install with pip
@@ -51,13 +51,13 @@ python -m pip install -e .
 
 ### Command-line tool
 
-The `format-transcripts` script takes an interviewer name (via `-i`) and one or more `.vtt` files, and produces formatted files with the naming convention `<original_stem>_formatted.txt`. Optionally, you may also specify a directory for the formatted files using the `-o` flag (the default is the current working directory).
+The `teams-transcript-formatter` script takes an interviewer name (via `-i`) and one or more `.vtt` files, and produces formatted files with the naming convention `<original_stem>_formatted.txt`. Optionally, you may also specify a directory for the formatted files using the `-o` flag (the default is the current working directory).
 
 ```sh
-format-transcripts -i "John Smith" transcript.vtt
+teams-transcript-formatter -i "John Smith" transcript.vtt
 ```
 
-Run `format-transcripts -h` (or `--help`) for full guidance.
+Run `teams-transcript-formatter -h` (or `--help`) for full guidance.
 
 
 ## Example
@@ -82,7 +82,7 @@ and I have many things to say.</v>
 Run the script:
 
 ```
-$ format-transcripts -i "John Smith" transcript.vtt
+$ teams-transcript-formatter -i "John Smith" transcript.vtt
 $ head -6 transcript_formatted.txt
 > Interviewer | Hello, I am the interviewer. | 00:10
 

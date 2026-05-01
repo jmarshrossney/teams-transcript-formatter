@@ -7,9 +7,6 @@ import sys
 from argparse import ArgumentParser
 from collections.abc import Iterable
 from pathlib import Path
-from typing import cast
-
-import pandas as pd
 
 
 class BadInterviewerNameError(Exception):
@@ -67,35 +64,42 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
     chunks = chunks[1:]
     if not chunks:
         raise ValueError("No speech chunks found after WEBVTT header")
-    array = [chunk.split("\n", maxsplit=2) for chunk in chunks]
 
-    df = pd.DataFrame(array, columns=["hash", "interval", "raw"])
+    # Parse each chunk into a record in a single pass
+    records: list[dict[str, str]] = []
+    for chunk in chunks:
+        _hash, interval, raw = chunk.split("\n", maxsplit=2)
+        timestamp = _extract_timestamp(interval)
+        raw = re.sub("<v |</v>", "", raw)
+        speaker, speech = raw.split(">", 1)
+        speech = speech.replace("\n", " ").strip()
+        if speech:
+            records.append({"timestamp": timestamp, "speaker": speaker, "speech": speech})
 
-    # Replace hh:mm:ss.ff timestamp with mm:ss
-    df["timestamp"] = df["interval"].apply(_extract_timestamp)
+    # Assign contiguous block IDs: increment whenever the speaker changes
+    if not records:
+        return ""
+    block = 1
+    records[0]["block"] = block
+    for i in range(1, len(records)):
+        if records[i]["speaker"] != records[i - 1]["speaker"]:
+            block += 1
+        records[i]["block"] = block
 
-    # Strip html tags and separate speaker/speech
-    df["raw"] = df["raw"].apply(lambda s: re.sub("<v |</v>", "", s))
-    df[["speaker", "speech"]] = df["raw"].str.split(">", n=1, expand=True)
-
-    # Replace newlines with spaces and drop rows containing no speech
-    df["speech"] = df["speech"].str.replace("\n", " ").str.strip()
-    df = df[df["speech"].astype(bool)]
-
-    df.drop(columns=["hash", "interval", "raw"], inplace=True)
-
-    # Merge adjacent blocks with the same speaker using a Boolean flag
-    # to indicate that the speaker has changed, then convert flag to
-    # integer increment using cumsum trick
-    speaker = cast(pd.Series, df["speaker"])
-    df["block"] = (speaker != speaker.shift()).cumsum()
-    df = df.groupby("block").agg(
-        {"timestamp": "first", "speaker": "first", "speech": lambda x: " ".join(x)}
-    )
+    # Merge adjacent records that belong to the same block
+    merged: list[dict[str, str]] = []
+    current_block = None
+    for r in records:
+        if r["block"] != current_block:
+            current_block = r["block"]
+            merged.append(
+                {"timestamp": r["timestamp"], "speaker": r["speaker"], "speech": r["speech"]}
+            )
+        else:
+            merged[-1]["speech"] += " " + r["speech"]
 
     # Check that there are 2 speakers, one of which is INTERVIEWER
-    speakers_after_groupby = cast(pd.Series, df["speaker"])
-    speakers = speakers_after_groupby.unique()
+    speakers = {m["speaker"] for m in merged}
     if len(speakers) != 2:
         raise InterviewerNotFoundError(
             "Expected exactly 2 speakers in the transcript, "
@@ -108,22 +112,15 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
             f"Available speakers: {', '.join(speakers)}"
         )
 
-    # Replace names with 'Interviewer' and 'Student'
-    df.loc[:, "speaker"] = speakers_after_groupby.apply(
-        lambda name: "Interviewer" if name == interviewer else "Student"
-    )
-
-    # Add '<' or '>' prefix
-    renamed_speaker = cast(pd.Series, df["speaker"])
-    df.loc[:, "prefix"] = renamed_speaker.apply(lambda name: ">" if name == "Interviewer" else "<")
+    # Replace names with 'Interviewer' and 'Student', and add prefix
+    for m in merged:
+        m["speaker"] = "Interviewer" if m["speaker"] == interviewer else "Student"
+        m["prefix"] = ">" if m["speaker"] == "Interviewer" else "<"
 
     # Format in human-readable way, appropriate for annotation
     # TODO: replace hard-coded f-string with template file
     formatted_transcript = "\n\n".join(
-        [
-            f"{prefix} {speaker} | {speech} | {time}"
-            for (time, speaker, speech, prefix) in df.itertuples(index=False, name=None)
-        ]
+        f"{m['prefix']} {m['speaker']} | {m['speech']} | {m['timestamp']}" for m in merged
     )
 
     return formatted_transcript

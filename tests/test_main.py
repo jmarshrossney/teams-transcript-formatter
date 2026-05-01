@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from teams_transcript_formatter.main import (
+from teams_transcript_formatter.formatter import (
     BadInterviewerNameError,
     InterviewerNotFoundError,
     _extract_timestamp,

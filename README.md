@@ -57,7 +57,22 @@ The `teams-transcript-formatter` script takes an interviewer name (via `-i`) and
 teams-transcript-formatter -i "John Smith" transcript.vtt
 ```
 
-Run `teams-transcript-formatter -h` (or `--help`) for full guidance.
+If you run without arguments, you will be **prompted interactively** for the interviewer name and file paths. To disable this, pass `--no-interactive`.
+
+Run `teams-transcript-formatter -h` for full guidance, including shell completion.
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `-i`, `--interviewer` | Name of the interviewer as it appears in the transcript |
+| `-o`, `--output` | Output directory for `.txt` files (default: `.`) |
+| `--force` | Overwrite existing output files instead of refusing |
+| `-v`, `--verbose` | Print additional progress information |
+| `-q`, `--quiet` | Suppress all non-error output |
+| `--no-interactive` | Disable interactive prompts; fail on missing arguments |
+| `--version` | Show the version and exit |
+| `-h`, `--help` | Show the help message and exit |
 
 
 ## Example

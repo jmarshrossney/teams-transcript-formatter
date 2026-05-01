@@ -66,7 +66,7 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
         raise ValueError("No speech chunks found after WEBVTT header")
 
     # Parse each chunk into a record in a single pass
-    records: list[dict[str, str]] = []
+    records = []
     for chunk in chunks:
         _hash, interval, raw = chunk.split("\n", maxsplit=2)
         timestamp = _extract_timestamp(interval)
@@ -87,7 +87,7 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
         records[i]["block"] = block
 
     # Merge adjacent records that belong to the same block
-    merged: list[dict[str, str]] = []
+    merged = []
     current_block = None
     for r in records:
         if r["block"] != current_block:

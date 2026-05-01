@@ -7,8 +7,31 @@ Currently it is limited to one-to-one meetings with transcripts downloaded in th
 
 ## Installation
 
+This package is not yet on PyPI, so you must install directly from the GitHub repository.
 
-### From GitHub
+### Run with `uvx`
+
+No installation required — run it once-off with [`uvx`](https://docs.astral.sh/uv/guides/tools/#running-tools):
+
+```sh
+uvx --from git+https://github.com/jmarshrossney/teams-transcript-formatter format-transcripts -i "John Smith" transcript.vtt
+```
+
+### Install as a tool with `uv`
+
+Install globally with `uv tool install`:
+
+```sh
+uv tool install git+https://github.com/jmarshrossney/teams-transcript-formatter
+```
+
+After installation, `format-transcripts` will be available on your PATH:
+
+```sh
+format-transcripts -i "John Smith" transcript.vtt
+```
+
+### Install with pip
 
 ```sh
 python -m pip install git+https://github.com/jmarshrossney/teams-transcript-formatter
@@ -16,7 +39,7 @@ python -m pip install git+https://github.com/jmarshrossney/teams-transcript-form
 
 ### From source
 
-If you want to make changes to the source code you can clone the repository and install in 'editable' mode,
+If you want to make changes to the source code you can clone the repository and install in editable mode:
 
 ```sh
 git clone https://github.com/jmarshrossney/teams-transcript-formatter

@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from collections.abc import Iterable
 from pathlib import Path
 import re
+from typing import cast
 
 import pandas as pd
 
@@ -67,13 +68,15 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
     # Merge adjacent blocks with the same speaker using a Boolean flag
     # to indicate that the speaker has changed, then convert flag to
     # integer increment using cumsum trick
-    df["block"] = (df["speaker"] != df["speaker"].shift()).cumsum()
+    speaker = cast(pd.Series, df["speaker"])
+    df["block"] = (speaker != speaker.shift()).cumsum()
     df = df.groupby("block").agg(
         {"timestamp": "first", "speaker": "first", "speech": lambda x: " ".join(x)}
     )
 
     # Check that there are 2 speakers, one of which is INTERVIEWER
-    speakers = df["speaker"].unique()
+    speakers_after_groupby = cast(pd.Series, df["speaker"])
+    speakers = speakers_after_groupby.unique()
     assert len(speakers) == 2
     if interviewer not in speakers:
         raise BadInterviewerName(
@@ -81,12 +84,13 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
         )
 
     # Replace names with 'Interviewer' and 'Student'
-    df["speaker"] = df["speaker"].apply(
+    df.loc[:, "speaker"] = speakers_after_groupby.apply(
         lambda name: "Interviewer" if name == interviewer else "Student"
     )
 
     # Add '<' or '>' prefix
-    df["prefix"] = df["speaker"].apply(
+    renamed_speaker = cast(pd.Series, df["speaker"])
+    df.loc[:, "prefix"] = renamed_speaker.apply(
         lambda name: ">" if name == "Interviewer" else "<"
     )
 

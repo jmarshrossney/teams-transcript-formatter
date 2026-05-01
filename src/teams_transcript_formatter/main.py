@@ -65,6 +65,8 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
     if not chunks or not chunks[0].startswith("WEBVTT"):
         raise ValueError("Malformed or empty VTT file: expected the first line to contain 'WEBVTT'")
     chunks = chunks[1:]
+    if not chunks:
+        raise ValueError("No speech chunks found after WEBVTT header")
     array = [chunk.split("\n", maxsplit=2) for chunk in chunks]
 
     df = pd.DataFrame(array, columns=["hash", "interval", "raw"])
@@ -77,8 +79,8 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
     df[["speaker", "speech"]] = df["raw"].str.split(">", n=1, expand=True)
 
     # Replace newlines with spaces and drop rows containing no speech
-    df["speech"] = df["speech"].str.replace("\n", " ")
-    df = df[df["speech"].str.strip().astype(bool)]
+    df["speech"] = df["speech"].str.replace("\n", " ").str.strip()
+    df = df[df["speech"].astype(bool)]
 
     df.drop(columns=["hash", "interval", "raw"], inplace=True)
 

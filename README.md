@@ -26,33 +26,20 @@ python -m pip install -e .
 
 ## Usage
 
-### Configuration
-
-You first need to create a file called `.env` in the directory in which you
-will be executing the script. This file should contain a single line with
-the form
-
-```sh
-INTERVIEWER='Interviewer Name'
-```
-
-where `Interviewer Name` should be replaced by the name of the interviewer
-*as it appears in the transcript*.
-
-Tip: you can do this directly from the command line by running `dotenv set INTERVIEWER "Interviewer Name"`.
-
-
 ### Command-line tool
 
-There is one command-line script called `format-transcripts` which takes one or more `.vtt` files and produces one or more formatted files with the naming convention `<original_stem>_formatted.txt`. Optionally, you may also specify a directory for the formatted files using the `-o` flag (the default is the current working directory).
+The `format-transcripts` script takes an interviewer name (via `-i`) and one or more `.vtt` files, and produces formatted files with the naming convention `<original_stem>_formatted.txt`. Optionally, you may also specify a directory for the formatted files using the `-o` flag (the default is the current working directory).
 
+```sh
+format-transcripts -i "John Smith" transcript.vtt
+```
 
-You can also run `format-transcripts -h` (or `--help`) for guidance.
+Run `format-transcripts -h` (or `--help`) for full guidance.
 
 
 ## Example
 
-Say we have a Teams transcript file which we have downloaded and named `transcript.vtt` which looks something like this
+Say we have a Teams transcript file named `transcript.vtt`:
 
 ```sh
 $ head -11 transcript.vtt
@@ -69,22 +56,14 @@ and I have many things to say.</v>
 
 ```
 
-We first need to set the interviewer name.
-
-```sh
-$ dotenv set INTERVIEWER "John Smith"
-```
-
-Now we can run the script and see what the formatted transcript looks like.
+Run the script:
 
 ```
-$ format-transcripts transcript.vtt
+$ format-transcripts -i "John Smith" transcript.vtt
 $ head -6 transcript_formatted.txt
-Interviewer (00:10):
-        Hello, I am the interviewer.
+> Interviewer | Hello, I am the interviewer. | 00:10
 
-Student (00:13):
-        Nice. I am the student being interviewed, and I have many things to say.
+< Student | Nice. I am the student being interviewed, and I have many things to say. | 00:13
 
 ```
 

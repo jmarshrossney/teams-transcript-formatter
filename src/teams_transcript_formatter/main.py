@@ -116,7 +116,6 @@ def main(files: list[Path], output_dir: Path, interviewer: str) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for infile in files:
-
         # Read file as single string (assume it's sufficiently small)
         with infile.open("r") as f:
             raw_transcript = f.read()

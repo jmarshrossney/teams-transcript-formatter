@@ -100,14 +100,6 @@ def format_transcript(
             help="Overwrite existing output files instead of refusing.",
         ),
     ] = False,
-    verbose: Annotated[
-        bool,
-        typer.Option(
-            "-v",
-            "--verbose",
-            help="Print additional progress information.",
-        ),
-    ] = False,
     quiet: Annotated[
         bool,
         typer.Option(
@@ -150,7 +142,7 @@ def format_transcript(
 
     # --- Warn about non-.vtt files ---
     non_vtt = [f for f in files if f.suffix.lower() != ".vtt"]
-    if non_vtt and verbose:
+    if non_vtt:
         names = ", ".join(str(f) for f in non_vtt)
         err_console.print(f"[yellow]Warning:[/yellow] Non-.vtt extension(s): {names}")
 
@@ -173,11 +165,9 @@ def format_transcript(
                     finally:
                         sys.stdout = old_stdout
             else:
-                if verbose:
-                    err_console.print(
-                        f"[dim]Processing {len(files)} file(s), "
-                        f"output: [cyan]{output_dir}[/cyan][/dim]"
-                    )
+                err_console.print(
+                    f"[dim]Processing {len(files)} file(s), output: [cyan]{output_dir}[/cyan][/dim]"
+                )
                 main(
                     files,
                     output_dir,
@@ -189,8 +179,7 @@ def format_transcript(
         else:
             if not quiet:
                 for i, infile in enumerate(files):
-                    if verbose:
-                        err_console.print(f"[dim]Processing: [cyan]{infile}[/cyan][/dim]")
+                    err_console.print(f"[dim]Processing: [cyan]{infile}[/cyan][/dim]")
                     raw = infile.read_text()
                     formatted = _format_transcript(
                         raw,

@@ -81,7 +81,6 @@ Run `teams-transcript-formatter -h` for full guidance, including shell completio
 | `--template` | Python format string for output. Placeholders: `{prefix}`, `{speaker}`, `{speech}`, `{timestamp}`. |
 | `-o`, `--output` | Output directory for `.txt` files (default: `.`) |
 | `--force` | Overwrite existing output files instead of refusing |
-| `-v`, `--verbose` | Print additional progress information |
 | `-q`, `--quiet` | Suppress all non-error output |
 | `--version` | Show the version and exit |
 | `-h`, `--help` | Show the help message and exit |

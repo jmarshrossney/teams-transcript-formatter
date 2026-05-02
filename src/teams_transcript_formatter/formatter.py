@@ -1,7 +1,7 @@
 """
 Make Microsoft Teams interview transcripts human-readable.
 
-Core formatting logic — no CLI dependency.
+Core formatting logic.
 """
 
 import re

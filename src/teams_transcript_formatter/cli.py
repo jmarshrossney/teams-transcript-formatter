@@ -16,6 +16,7 @@ from rich.console import Console
 from teams_transcript_formatter.formatter import (
     BadInterviewerNameError,
     InterviewerNotFoundError,
+    _format_transcript,
     main,
 )
 
@@ -55,13 +56,13 @@ def format_transcript(
         ),
     ] = None,
     output_dir: Annotated[
-        Path,
+        Path | None,
         typer.Option(
             "-o",
             "--output",
-            help="Directory in which to save the formatted `.txt` files.",
+            help="Directory to save formatted `.txt` files. If not given, prints to stdout.",
         ),
-    ] = Path("."),
+    ] = None,
     force: Annotated[
         bool,
         typer.Option(
@@ -150,22 +151,37 @@ def format_transcript(
 
     # --- Run ---
     try:
-        if quiet:
-            with open(os.devnull, "w") as devnull:
-                old_stdout = sys.stdout
-                sys.stdout = devnull
-                try:
-                    main(_files, output_dir, _interviewer, force=force)
-                finally:
-                    sys.stdout = old_stdout
+        if output_dir is not None:
+            # Write to files in output directory
+            if quiet:
+                with open(os.devnull, "w") as devnull:
+                    old_stdout = sys.stdout
+                    sys.stdout = devnull
+                    try:
+                        main(_files, output_dir, _interviewer, force=force)
+                    finally:
+                        sys.stdout = old_stdout
+            else:
+                if verbose:
+                    err_console.print(
+                        f"[dim]Processing {len(_files)} file(s), "
+                        f"interviewer: [cyan]{_interviewer}[/cyan], "
+                        f"output: [cyan]{output_dir}[/cyan][/dim]"
+                    )
+                main(_files, output_dir, _interviewer, force=force)
         else:
-            if verbose:
-                err_console.print(
-                    f"[dim]Processing {len(_files)} file(s), "
-                    f"interviewer: [cyan]{_interviewer}[/cyan], "
-                    f"output: [cyan]{output_dir}[/cyan][/dim]"
-                )
-            main(_files, output_dir, _interviewer, force=force)
+            # Print to stdout
+            if not quiet:
+                for i, infile in enumerate(_files):
+                    if verbose:
+                        err_console.print(f"[dim]Processing: [cyan]{infile}[/cyan][/dim]")
+                    raw = infile.read_text()
+                    formatted = _format_transcript(raw, _interviewer)
+                    if len(_files) > 1:
+                        print(f"--- {infile} ---")
+                    print(formatted)
+                    if i < len(_files) - 1:
+                        print()
     except ValueError as exc:
         err_console.print(f"[bold red]Error:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc

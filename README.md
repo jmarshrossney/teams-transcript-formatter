@@ -86,7 +86,7 @@ Run `teams-transcript-formatter -h` for full guidance, including shell completio
 | `-h`, `--help` | Show the help message and exit |
 
 
-## Example
+## Examples
 
 Say we have a Teams transcript file named `transcript.vtt`:
 
@@ -105,18 +105,91 @@ and I have many things to say.</v>
 
 ```
 
-Run the script with rename and prefix options:
+### Default format
 
+No flags — original speaker names and default template.
+
+```sh
+$ teams-transcript-formatter transcript.vtt
+$ head -3 transcript_formatted.txt
+John Smith | Hello, I am the interviewer. | 00:10
+
+Jane Doe | Nice. I am the student being interviewed, and I have many things to say. | 00:13
 ```
+
+### Rename speakers
+
+Map original names to display names with `--rename`.
+
+```sh
+$ teams-transcript-formatter \
+    --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
+    transcript.vtt
+$ head -3 transcript_formatted.txt
+Interviewer | Hello, I am the interviewer. | 00:10
+
+Student | Nice. I am the student being interviewed, and I have many things to say. | 00:13
+```
+
+### Add prefixes
+
+Combine `--rename` with `--prefix` to visually distinguish speakers. Prefixes are keyed on the **display name** (after renaming).
+
+```sh
 $ teams-transcript-formatter \
     --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
     --prefix "Interviewer=> " --prefix "Student=< " \
     transcript.vtt
-$ head -6 transcript_formatted.txt
+$ head -3 transcript_formatted.txt
 > Interviewer | Hello, I am the interviewer. | 00:10
 
 < Student | Nice. I am the student being interviewed, and I have many things to say. | 00:13
+```
 
+### Custom output template
+
+Control the output format with `--template`. Available placeholders: `{prefix}`, `{speaker}`, `{speech}`, `{timestamp}`.
+
+```sh
+$ teams-transcript-formatter \
+    --rename "John Smith=JS" --rename "Jane Doe=JD" \
+    --template "[{timestamp}] {speaker}: {speech}" \
+    transcript.vtt
+$ head -3 transcript_formatted.txt
+[00:10] JS: Hello, I am the interviewer.
+
+[00:13] JD: Nice. I am the student being interviewed, and I have many things to say.
+```
+
+### Full customisation
+
+All three flags together — rename, prefix, and template.
+
+```sh
+$ teams-transcript-formatter \
+    --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
+    --prefix "Interviewer=> " --prefix "Student=< " \
+    --template "{prefix}{speaker}: {speech} [{timestamp}]" \
+    transcript.vtt
+$ head -3 transcript_formatted.txt
+> Interviewer: Hello, I am the interviewer. [00:10]
+
+< Student: Nice. I am the student being interviewed, and I have many things to say. [00:13]
+```
+
+### Selective prefixes
+
+Pass an empty value to `--prefix` to suppress the prefix for a given speaker.
+
+```sh
+$ teams-transcript-formatter \
+    --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
+    --prefix "Interviewer=> " --prefix "Student=" \
+    transcript.vtt
+$ head -3 transcript_formatted.txt
+> Interviewer | Hello, I am the interviewer. | 00:10
+
+Student | Nice. I am the student being interviewed, and I have many things to say. | 00:13
 ```
 
 ## Privacy

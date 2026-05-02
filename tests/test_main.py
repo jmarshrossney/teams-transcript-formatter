@@ -3,8 +3,6 @@ from pathlib import Path
 import pytest
 
 from teams_transcript_formatter.formatter import (
-    BadInterviewerNameError,
-    InterviewerNotFoundError,
     _extract_timestamp,
     _format_transcript,
     main,
@@ -27,87 +25,210 @@ class TestExtractTimestamp:
 
 class TestFormatTranscriptHappyPath:
     def test_produces_correct_output(
-        self, sample_vtt: str, interviewer: str, expected_output: str
+        self,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+        expected_output: str,
     ) -> None:
-        result = _format_transcript(sample_vtt, interviewer)
+        result = _format_transcript(
+            sample_vtt,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
         assert result == expected_output
 
     def test_handles_crlf_line_endings(
-        self, sample_vtt_crlf: str, interviewer: str, expected_output: str
+        self,
+        sample_vtt_crlf: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+        expected_output: str,
     ) -> None:
-        result = _format_transcript(sample_vtt_crlf, interviewer)
+        result = _format_transcript(
+            sample_vtt_crlf,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
         assert result == expected_output
 
     def test_adjacent_same_speaker_blocks_are_merged(
-        self, sample_vtt_adjacent: str, interviewer: str, sample_vtt_adjacent_expected: str
+        self,
+        sample_vtt_adjacent: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+        sample_vtt_adjacent_expected: str,
     ) -> None:
-        result = _format_transcript(sample_vtt_adjacent, interviewer)
+        result = _format_transcript(
+            sample_vtt_adjacent,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
         assert result == sample_vtt_adjacent_expected
 
     def test_multiline_speech_is_joined_with_spaces(
-        self, sample_vtt_multiline: str, interviewer: str, sample_vtt_multiline_expected: str
+        self,
+        sample_vtt_multiline: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+        sample_vtt_multiline_expected: str,
     ) -> None:
-        result = _format_transcript(sample_vtt_multiline, interviewer)
+        result = _format_transcript(
+            sample_vtt_multiline,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
         assert result == sample_vtt_multiline_expected
 
-    def test_lines_have_expected_prefixes(self, sample_vtt: str, interviewer: str) -> None:
-        result = _format_transcript(sample_vtt, interviewer)
+    def test_lines_have_expected_prefixes(
+        self,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+    ) -> None:
+        result = _format_transcript(
+            sample_vtt,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
         lines = [line for line in result.split("\n") if line]
         assert all(line.startswith(("> Interviewer |", "< Student |")) for line in lines)
 
-    def test_blocks_separated_by_double_newline(self, sample_vtt: str, interviewer: str) -> None:
-        result = _format_transcript(sample_vtt, interviewer)
+    def test_blocks_separated_by_double_newline(
+        self,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+    ) -> None:
+        result = _format_transcript(
+            sample_vtt,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
         blocks = result.split("\n\n")
         assert len(blocks) == 4
         for block in blocks:
             assert block.startswith((">", "<"))
 
+    def test_single_speaker_is_valid(self) -> None:
+        """A single-speaker transcript should no longer raise an error."""
+        vtt = (
+            "WEBVTT\n\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice>Hello.</v>\n\n"
+            "hash/1\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Alice>Hi again.</v>\n"
+        )
+        result = _format_transcript(vtt)
+        assert result.startswith("Alice | Hello. Hi again. | 00:10")
+
+    def test_three_speakers_is_valid(self) -> None:
+        """A transcript with 3+ speakers should work fine."""
+        vtt = (
+            "WEBVTT\n\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice>Hello.</v>\n\n"
+            "hash/1\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Bob>Hi.</v>\n\n"
+            "hash/2\n"
+            "00:00:14.000 --> 00:00:16.000\n"
+            "<v Carol>Hey.</v>\n"
+        )
+        result = _format_transcript(vtt)
+        assert "Alice | Hello." in result
+        assert "Bob | Hi." in result
+        assert "Carol | Hey." in result
+
+    def test_no_rename_keeps_original_names(self, sample_vtt_no_rename: str) -> None:
+        result = _format_transcript(sample_vtt_no_rename)
+        assert "Alice | Hello." in result
+        assert "Bob | Hi." in result
+
+    def test_partial_rename_preserves_unmatched(
+        self,
+        sample_vtt_partial_rename: str,
+    ) -> None:
+        result = _format_transcript(
+            sample_vtt_partial_rename,
+            rename={"Alice": "Moderator"},
+        )
+        assert "Moderator | Hello." in result
+        assert "Bob | Hi there." in result
+        assert "Carol | Greetings." in result
+
+    def test_custom_template(self, sample_vtt_custom_template: str) -> None:
+        result = _format_transcript(
+            sample_vtt_custom_template,
+            rename={"Alice": "A", "Bob": "B"},
+            template="{speaker}: {speech} [{timestamp}]",
+        )
+        assert result == ("A: Hello. [00:10]\n\nB: Hi. [00:12]")
+
+    def test_prefix_with_empty_value(self) -> None:
+        vtt = "WEBVTT\n\nhash/0\n00:00:10.000 --> 00:00:12.000\n<v Alice>Hello.</v>\n"
+        result = _format_transcript(
+            vtt,
+            rename={"Alice": "A"},
+            prefix={"A": ""},
+        )
+        assert result == "A | Hello. | 00:10"
+
+    def test_no_prefixes_given(self, sample_vtt_no_rename: str) -> None:
+        result = _format_transcript(sample_vtt_no_rename, rename={"Alice": "A"})
+        assert result.startswith("A | Hello.")
+
 
 class TestFormatTranscriptErrors:
     def test_missing_webvtt_header_raises_value_error(
-        self, sample_vtt_no_webvtt: str, interviewer: str
+        self,
+        sample_vtt_no_webvtt: str,
     ) -> None:
         with pytest.raises(ValueError, match="expected the first line to contain 'WEBVTT'"):
-            _format_transcript(sample_vtt_no_webvtt, interviewer)
+            _format_transcript(sample_vtt_no_webvtt)
 
-    def test_empty_string_raises_value_error(self, interviewer: str) -> None:
+    def test_empty_string_raises_value_error(self) -> None:
         with pytest.raises(ValueError, match="expected the first line to contain 'WEBVTT'"):
-            _format_transcript("", interviewer)
+            _format_transcript("")
 
-    def test_webvtt_only_no_chunks_raises_value_error(self, interviewer: str) -> None:
+    def test_webvtt_only_no_chunks_raises_value_error(self) -> None:
         with pytest.raises(ValueError, match="No speech chunks found"):
-            _format_transcript("WEBVTT", interviewer)
+            _format_transcript("WEBVTT")
 
-    def test_single_speaker_raises_interviewer_not_found_error(
-        self, sample_vtt_single_speaker: str, interviewer: str
-    ) -> None:
-        with pytest.raises(InterviewerNotFoundError, match="Expected exactly 2 speakers"):
-            _format_transcript(sample_vtt_single_speaker, interviewer)
-
-    def test_wrong_interviewer_name_raises_bad_interviewer_name_error(
-        self, sample_vtt_wrong_interviewer: str, interviewer: str
-    ) -> None:
-        with pytest.raises(
-            BadInterviewerNameError, match="Interviewer 'John Smith' is not present"
-        ):
-            _format_transcript(sample_vtt_wrong_interviewer, interviewer)
+    def test_invalid_template_placeholder_raises_value_error(self) -> None:
+        vtt = "WEBVTT\n\nhash/0\n00:00:10.000 --> 00:00:12.000\n<v Alice>Hello.</v>\n"
+        with pytest.raises(ValueError, match=r"Invalid template placeholder"):
+            _format_transcript(vtt, template="{speaker} | {speech} | {bad_placeholder}")
 
 
 class TestMain:
-    def test_writes_output_file(self, tmp_path: Path, sample_vtt: str, interviewer: str) -> None:
+    def test_writes_output_file(
+        self,
+        tmp_path: Path,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+    ) -> None:
         infile = tmp_path / "transcript.vtt"
         infile.write_text(sample_vtt)
         outdir = tmp_path / "output"
         outfile = outdir / "transcript_formatted.txt"
 
-        main([infile], outdir, interviewer)
+        main([infile], outdir, rename=interview_rename, prefix=interview_prefix)
 
         assert outfile.is_file()
         content = outfile.read_text()
         assert content.startswith("> Interviewer |")
 
     def test_raises_file_exists_error_if_output_exists(
-        self, tmp_path: Path, sample_vtt: str, interviewer: str
+        self,
+        tmp_path: Path,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
     ) -> None:
         infile = tmp_path / "transcript.vtt"
         infile.write_text(sample_vtt)
@@ -117,10 +238,19 @@ class TestMain:
         outfile.write_text("existing content")
 
         with pytest.raises(FileExistsError, match="already exists"):
-            main([infile], outdir, interviewer)
+            main(
+                [infile],
+                outdir,
+                rename=interview_rename,
+                prefix=interview_prefix,
+            )
 
     def test_processes_multiple_files(
-        self, tmp_path: Path, sample_vtt: str, interviewer: str
+        self,
+        tmp_path: Path,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
     ) -> None:
         infile1 = tmp_path / "transcript1.vtt"
         infile2 = tmp_path / "transcript2.vtt"
@@ -128,38 +258,45 @@ class TestMain:
         infile2.write_text(sample_vtt)
         outdir = tmp_path / "output"
 
-        main([infile1, infile2], outdir, interviewer)
+        main(
+            [infile1, infile2],
+            outdir,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
 
         assert (outdir / "transcript1_formatted.txt").is_file()
         assert (outdir / "transcript2_formatted.txt").is_file()
 
-    def test_empty_files_list_raises_value_error(self, interviewer: str) -> None:
+    def test_empty_files_list_raises_value_error(self) -> None:
         with pytest.raises(ValueError, match="at least one file path"):
-            main([], Path("."), interviewer)
+            main([], Path("."))
 
-    def test_non_path_in_files_raises_type_error(self, interviewer: str) -> None:
+    def test_non_path_in_files_raises_type_error(self) -> None:
         with pytest.raises(TypeError, match="Each file must be a Path"):
-            main(["/not/a/path"], Path("."), interviewer)  # type: ignore[list-item]
+            main(["/not/a/path"], Path("."))  # type: ignore[list-item]
 
-    def test_non_iterable_files_raises_type_error(self, interviewer: str) -> None:
+    def test_non_iterable_files_raises_type_error(self) -> None:
         with pytest.raises(TypeError, match="must be an iterable"):
-            main(None, Path("."), interviewer)  # type: ignore[arg-type]
-
-    def test_empty_interviewer_raises_type_error(self, tmp_path: Path) -> None:
-        infile = tmp_path / "transcript.vtt"
-        infile.write_text("WEBVTT\n\n")
-
-        with pytest.raises(TypeError, match="interviewer.*must be a non-empty str"):
-            main([infile], Path("."), "")
+            main(None, Path("."))  # type: ignore[arg-type]
 
     def test_output_directory_is_created(
-        self, tmp_path: Path, sample_vtt: str, interviewer: str
+        self,
+        tmp_path: Path,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
     ) -> None:
         infile = tmp_path / "transcript.vtt"
         infile.write_text(sample_vtt)
         outdir = tmp_path / "nested" / "output"
 
-        main([infile], outdir, interviewer)
+        main(
+            [infile],
+            outdir,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
 
         assert outdir.is_dir()
         assert (outdir / "transcript_formatted.txt").is_file()
@@ -167,27 +304,45 @@ class TestMain:
 
 class TestIntegration:
     def test_end_to_end_roundtrip(
-        self, tmp_path: Path, sample_vtt: str, interviewer: str, expected_output: str
+        self,
+        tmp_path: Path,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+        expected_output: str,
     ) -> None:
-        """Write a real .vtt file, run main, and verify the .txt output matches."""
         infile = tmp_path / "interview.vtt"
         infile.write_text(sample_vtt)
         outdir = tmp_path / "formatted"
 
-        main([infile], outdir, interviewer)
+        main(
+            [infile],
+            outdir,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
 
         outfile = outdir / "interview_formatted.txt"
         assert outfile.read_text() == expected_output
 
     def test_end_to_end_with_crlf_input(
-        self, tmp_path: Path, sample_vtt_crlf: str, interviewer: str, expected_output: str
+        self,
+        tmp_path: Path,
+        sample_vtt_crlf: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+        expected_output: str,
     ) -> None:
-        """Write a CRLF .vtt file, run main, verify output matches Unix-style expected."""
         infile = tmp_path / "interview.vtt"
         infile.write_text(sample_vtt_crlf)
         outdir = tmp_path / "formatted"
 
-        main([infile], outdir, interviewer)
+        main(
+            [infile],
+            outdir,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
 
         outfile = outdir / "interview_formatted.txt"
         assert outfile.read_text() == expected_output

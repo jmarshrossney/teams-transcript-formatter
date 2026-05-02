@@ -1,5 +1,5 @@
 """
-Make Microsoft Teams interview transcripts human-readable.
+Make Microsoft Teams meeting transcripts human-readable.
 
 Core formatting logic.
 """
@@ -7,14 +7,11 @@ Core formatting logic.
 import re
 from collections.abc import Iterable
 from pathlib import Path
+from string import Formatter
 
+DEFAULT_TEMPLATE = "{prefix}{speaker} | {speech} | {timestamp}"
 
-class BadInterviewerNameError(Exception):
-    pass
-
-
-class InterviewerNotFoundError(Exception):
-    pass
+_template_formatter = Formatter()
 
 
 def _extract_timestamp(interval: str) -> str:
@@ -23,7 +20,21 @@ def _extract_timestamp(interval: str) -> str:
     return f"{parts[1]}:{parts[2]}"
 
 
-def _format_transcript(transcript: str, interviewer: str) -> str:
+def _format_transcript(
+    transcript: str,
+    rename: dict[str, str] | None = None,
+    prefix: dict[str, str] | None = None,
+    template: str = DEFAULT_TEMPLATE,
+) -> str:
+    # Validate template placeholders
+    try:
+        _template_formatter.format(template, prefix="", speaker="", speech="", timestamp="")
+    except KeyError as exc:
+        raise ValueError(
+            f"Invalid template placeholder {exc} in template: '{template}'. "
+            f"Allowed placeholders: {{prefix}}, {{speaker}}, {{speech}}, {{timestamp}}"
+        ) from exc
+
     # Normalize Windows-style line endings
     transcript = transcript.replace("\r\n", "\n").replace("\r", "\n")
 
@@ -69,35 +80,35 @@ def _format_transcript(transcript: str, interviewer: str) -> str:
         else:
             merged[-1]["speech"] += " " + r["speech"]
 
-    # Check that there are 2 speakers, one of which is INTERVIEWER
-    speakers = {m["speaker"] for m in merged}
-    if len(speakers) != 2:
-        raise InterviewerNotFoundError(
-            "Expected exactly 2 speakers in the transcript, "
-            f"but found {len(speakers)}: {', '.join(speakers)}. "
-            "This tool only supports one-to-one (2-person) meetings."
-        )
-    if interviewer not in speakers:
-        raise BadInterviewerNameError(
-            f"Interviewer '{interviewer}' is not present in this transcript. "
-            f"Available speakers: {', '.join(speakers)}"
-        )
-
-    # Replace names with 'Interviewer' and 'Student', and add prefix
+    # Apply rename and prefix mappings
+    _rename = rename or {}
+    _prefix = prefix or {}
     for m in merged:
-        m["speaker"] = "Interviewer" if m["speaker"] == interviewer else "Student"
-        m["prefix"] = ">" if m["speaker"] == "Interviewer" else "<"
+        m["speaker"] = _rename.get(m["speaker"], m["speaker"])
+        m["prefix"] = _prefix.get(m["speaker"], "")
 
-    # Format in human-readable way, appropriate for annotation
-    # TODO: replace hard-coded f-string with template file
+    # Format in human-readable way
     formatted_transcript = "\n\n".join(
-        f"{m['prefix']} {m['speaker']} | {m['speech']} | {m['timestamp']}" for m in merged
+        template.format(
+            prefix=m["prefix"],
+            speaker=m["speaker"],
+            speech=m["speech"],
+            timestamp=m["timestamp"],
+        )
+        for m in merged
     )
 
     return formatted_transcript
 
 
-def main(files: list[Path], output_dir: Path, interviewer: str, force: bool = False) -> None:
+def main(
+    files: list[Path],
+    output_dir: Path,
+    rename: dict[str, str] | None = None,
+    prefix: dict[str, str] | None = None,
+    template: str = DEFAULT_TEMPLATE,
+    force: bool = False,
+) -> None:
     """Format a given list of `.vtt` transcript files and save the results."""
 
     if not isinstance(files, Iterable):
@@ -109,17 +120,16 @@ def main(files: list[Path], output_dir: Path, interviewer: str, force: bool = Fa
             raise TypeError(f"Each file must be a Path, got {type(file)}")
     if not isinstance(output_dir, Path):
         raise TypeError(f"'output_dir' must be a Path, got {type(output_dir)}")
-    if not interviewer or not isinstance(interviewer, str):
-        raise TypeError(f"'interviewer' must be a non-empty str, got {interviewer!r}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for infile in files:
-        # Read file as single string (assume it's sufficiently small)
         with infile.open("r") as f:
             raw_transcript = f.read()
 
-        formatted_transcript = _format_transcript(raw_transcript, interviewer)
+        formatted_transcript = _format_transcript(
+            raw_transcript, rename=rename, prefix=prefix, template=template
+        )
 
         outfile = (output_dir / (infile.stem + "_formatted")).with_suffix(".txt")
         if outfile.exists() and not force:

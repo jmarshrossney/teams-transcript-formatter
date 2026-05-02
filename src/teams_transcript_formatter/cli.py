@@ -14,8 +14,7 @@ import typer
 from rich.console import Console
 
 from teams_transcript_formatter.formatter import (
-    BadInterviewerNameError,
-    InterviewerNotFoundError,
+    DEFAULT_TEMPLATE,
     _format_transcript,
     main,
 )
@@ -29,6 +28,19 @@ def _version_callback(value: bool) -> None:
 
         print(version("teams-transcript-formatter"))
         raise typer.Exit()
+
+
+def _parse_key_value(items: list[str], *, strip_value: bool = True) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for item in items:
+        if "=" not in item:
+            raise ValueError(f"Expected 'KEY=VALUE', got '{item}'")
+        k, v = item.split("=", 1)
+        k = k.strip()
+        if k in mapping:
+            raise ValueError(f"Duplicate key '{k}': each key must appear only once")
+        mapping[k] = v.strip() if strip_value else v
+    return mapping
 
 
 app = typer.Typer(
@@ -47,12 +59,29 @@ def format_transcript(
             help="One or more `.vtt` files downloaded from Microsoft Teams/Stream.",
         ),
     ] = None,
-    interviewer: Annotated[
+    rename: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--rename",
+            help="Map original speaker names to display names: 'OriginalName=DisplayName'. "
+            "Repeat for each speaker.",
+        ),
+    ] = None,
+    prefix: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--prefix",
+            help="Assign a prefix to each display name: 'DisplayName=>'. "
+            "Use an empty value for no prefix: 'DisplayName='. "
+            "Repeat for each speaker.",
+        ),
+    ] = None,
+    template: Annotated[
         str | None,
         typer.Option(
-            "-i",
-            "--interviewer",
-            help="Name of the interviewer as it appears in the transcript.",
+            "--template",
+            help="Python format string for output. "
+            "Placeholders: {prefix}, {speaker}, {speech}, {timestamp}.",
         ),
     ] = None,
     output_dir: Annotated[
@@ -103,24 +132,20 @@ def format_transcript(
         ),
     ] = None,
 ) -> None:
-    """Format Microsoft Teams interview transcripts into readable text files."""
+    """Format Microsoft Teams meeting transcripts into readable text files."""
 
-    # --- Resolve interviewer ---
-    _interviewer: str
-    if interviewer:
-        _interviewer = interviewer
-    elif no_interactive:
-        err_console.print(
-            "[bold red]Error:[/bold red] "
-            "An interviewer name is required (use [cyan]-i/--interviewer[/cyan] "
-            "or run without [cyan]--no-interactive[/cyan] to be prompted)."
-        )
-        raise typer.Exit(code=1)
-    else:
-        _interviewer = typer.prompt("Enter the interviewer's name as it appears in the transcript")
-        if not _interviewer.strip():
-            err_console.print("[bold red]Error:[/bold red] Interviewer name cannot be empty.")
-            raise typer.Exit(code=1)
+    # --- Resolve rename mapping ---
+    _rename: dict[str, str] | None = None
+    if rename:
+        _rename = _parse_key_value(rename)
+
+    # --- Resolve prefix mapping ---
+    _prefix: dict[str, str] | None = None
+    if prefix:
+        _prefix = _parse_key_value(prefix, strip_value=False)
+
+    # --- Resolve template ---
+    _template: str = template or DEFAULT_TEMPLATE
 
     # --- Resolve input files ---
     _files: list[Path]
@@ -152,31 +177,47 @@ def format_transcript(
     # --- Run ---
     try:
         if output_dir is not None:
-            # Write to files in output directory
             if quiet:
                 with open(os.devnull, "w") as devnull:
                     old_stdout = sys.stdout
                     sys.stdout = devnull
                     try:
-                        main(_files, output_dir, _interviewer, force=force)
+                        main(
+                            _files,
+                            output_dir,
+                            rename=_rename,
+                            prefix=_prefix,
+                            template=_template,
+                            force=force,
+                        )
                     finally:
                         sys.stdout = old_stdout
             else:
                 if verbose:
                     err_console.print(
                         f"[dim]Processing {len(_files)} file(s), "
-                        f"interviewer: [cyan]{_interviewer}[/cyan], "
                         f"output: [cyan]{output_dir}[/cyan][/dim]"
                     )
-                main(_files, output_dir, _interviewer, force=force)
+                main(
+                    _files,
+                    output_dir,
+                    rename=_rename,
+                    prefix=_prefix,
+                    template=_template,
+                    force=force,
+                )
         else:
-            # Print to stdout
             if not quiet:
                 for i, infile in enumerate(_files):
                     if verbose:
                         err_console.print(f"[dim]Processing: [cyan]{infile}[/cyan][/dim]")
                     raw = infile.read_text()
-                    formatted = _format_transcript(raw, _interviewer)
+                    formatted = _format_transcript(
+                        raw,
+                        rename=_rename,
+                        prefix=_prefix,
+                        template=_template,
+                    )
                     if len(_files) > 1:
                         print(f"--- {infile} ---")
                     print(formatted)
@@ -186,12 +227,6 @@ def format_transcript(
         err_console.print(f"[bold red]Error:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc
     except TypeError as exc:
-        err_console.print(f"[bold red]Error:[/bold red] {exc}")
-        raise typer.Exit(code=1) from exc
-    except BadInterviewerNameError as exc:
-        err_console.print(f"[bold red]Error:[/bold red] {exc}")
-        raise typer.Exit(code=1) from exc
-    except InterviewerNotFoundError as exc:
         err_console.print(f"[bold red]Error:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc
     except FileExistsError as exc:

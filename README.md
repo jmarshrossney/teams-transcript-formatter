@@ -1,8 +1,8 @@
 # Teams transcript formatter
 
-The purpose of this package is to make Microsoft Teams inverview transcripts easier to read and analyse using tools such as [QualCoder](https://github.com/ccbogel/QualCoder).
+The purpose of this package is to make Microsoft Teams meeting transcripts easier to read and analyse using tools such as [QualCoder](https://github.com/ccbogel/QualCoder).
 
-Currently it is limited to one-to-one meetings with transcripts downloaded in the `.vtt` format.
+It processes `.vtt` transcripts downloaded from Microsoft Teams/Stream, merges adjacent blocks from the same speaker, and outputs a clean, formatted text file. Speaker names can optionally be renamed and assigned prefixes, and the output format is customisable via a template.
 
 
 ## Installation
@@ -14,7 +14,7 @@ This package is not yet on PyPI, so you must install directly from the GitHub re
 No installation required — run it once-off with [`uvx`](https://docs.astral.sh/uv/guides/tools/#running-tools):
 
 ```sh
-uvx --from git+https://github.com/jmarshrossney/teams-transcript-formatter teams-transcript-formatter -i "John Smith" transcript.vtt
+uvx --from git+https://github.com/jmarshrossney/teams-transcript-formatter teams-transcript-formatter transcript.vtt
 ```
 
 ### Install as a tool with `uv`
@@ -28,7 +28,7 @@ uv tool install git+https://github.com/jmarshrossney/teams-transcript-formatter
 After installation, `teams-transcript-formatter` will be available on your PATH:
 
 ```sh
-teams-transcript-formatter -i "John Smith" transcript.vtt
+teams-transcript-formatter transcript.vtt
 ```
 
 ### Install with pip
@@ -51,13 +51,26 @@ python -m pip install -e .
 
 ### Command-line tool
 
-The `teams-transcript-formatter` script takes an interviewer name (via `-i`) and one or more `.vtt` files, and produces formatted files with the naming convention `<original_stem>_formatted.txt`. Optionally, you may also specify a directory for the formatted files using the `-o` flag (the default is the current working directory).
+The `teams-transcript-formatter` script takes one or more `.vtt` files and produces formatted files with the naming convention `<original_stem>_formatted.txt`. Optionally, you may also specify a directory for the formatted files using the `-o` flag (the default is the current working directory).
 
 ```sh
-teams-transcript-formatter -i "John Smith" transcript.vtt
+# Basic: keep original speaker names, default formatting
+teams-transcript-formatter transcript.vtt
+
+# Rename speakers (e.g. for an interview)
+teams-transcript-formatter \
+    --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
+    --prefix "Interviewer=> " --prefix "Student=< " \
+    transcript.vtt
+
+# Custom output format
+teams-transcript-formatter \
+    --rename "John Smith=JS" --rename "Jane Doe=JD" \
+    --template "{speaker}: {speech} [{timestamp}]" \
+    transcript.vtt
 ```
 
-If you run without arguments, you will be **prompted interactively** for the interviewer name and file paths. To disable this, pass `--no-interactive`.
+If you run without arguments, you will be **prompted interactively** for file paths. To disable this, pass `--no-interactive`.
 
 Run `teams-transcript-formatter -h` for full guidance, including shell completion.
 
@@ -65,7 +78,9 @@ Run `teams-transcript-formatter -h` for full guidance, including shell completio
 
 | Flag | Description |
 |------|-------------|
-| `-i`, `--interviewer` | Name of the interviewer as it appears in the transcript |
+| `--rename` | Map original speaker names to display names: `"OriginalName=DisplayName"`. Repeat for each speaker. |
+| `--prefix` | Assign a prefix to each display name: `"DisplayName=>"`. Repeat for each speaker. |
+| `--template` | Python format string for output. Placeholders: `{prefix}`, `{speaker}`, `{speech}`, `{timestamp}`. |
 | `-o`, `--output` | Output directory for `.txt` files (default: `.`) |
 | `--force` | Overwrite existing output files instead of refusing |
 | `-v`, `--verbose` | Print additional progress information |
@@ -94,10 +109,13 @@ and I have many things to say.</v>
 
 ```
 
-Run the script:
+Run the script with rename and prefix options:
 
 ```
-$ teams-transcript-formatter -i "John Smith" transcript.vtt
+$ teams-transcript-formatter \
+    --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
+    --prefix "Interviewer=> " --prefix "Student=< " \
+    transcript.vtt
 $ head -6 transcript_formatted.txt
 > Interviewer | Hello, I am the interviewer. | 00:10
 
@@ -107,12 +125,9 @@ $ head -6 transcript_formatted.txt
 
 ## Privacy
 
-Although the names attached to the speakers are modified to read 'Interviewer'
-and 'Student', all other redactions of sensitive and identifiable information
-must be performed before running this script.
+Speaker names can be replaced using the `--rename` flag. All other redactions of sensitive and identifiable information must be performed before running this script.
 
-Tip: the auto-generated transcripts can be edited in-situ using the Microsoft
-Stream app.
+Tip: the auto-generated transcripts can be edited in-situ using the Microsoft Stream app.
 
 Remember to delete the original transcripts after running this script!
 
@@ -123,12 +138,10 @@ This is just something I threw together in a couple of hours because I needed it
 
 There are some fairly simple additions that would make this more generally useful:
 
-- [ ] Handle meetings with >2 participants
-- [ ] User can configure how names are handled
-- [ ] Configure the output format, e.g. using a template
+- [x] Handle meetings with >2 participants
+- [x] User can configure how names are handled
+- [x] Configure the output format, e.g. using a template
 - [ ] Handle Zoom meetings
 
 
 However, it's going to remain quite a low priority unless I can see it becoming useful to myself or colleagues.
-
-

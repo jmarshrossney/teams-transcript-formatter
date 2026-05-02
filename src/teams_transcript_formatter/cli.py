@@ -2,7 +2,7 @@
 CLI entry point using Typer.
 
 Provides the `teams-transcript-formatter` command with --help/-h,
-interactive prompting, shell completion, and rich-formatted output.
+shell completion, and rich-formatted output.
 """
 
 import os
@@ -51,14 +51,15 @@ app = typer.Typer(
 @app.command(
     help="Turn `.vtt` audio transcripts from Microsoft Teams/Stream "
     "into human-readable plain text files.",
+    no_args_is_help=True,
 )
 def format_transcript(
     files: Annotated[
-        list[Path] | None,
+        list[Path],
         typer.Argument(
             help="One or more `.vtt` files downloaded from Microsoft Teams/Stream.",
         ),
-    ] = None,
+    ],
     rename: Annotated[
         list[str] | None,
         typer.Option(
@@ -115,13 +116,6 @@ def format_transcript(
             help="Suppress all non-error output.",
         ),
     ] = False,
-    no_interactive: Annotated[
-        bool,
-        typer.Option(
-            "--no-interactive",
-            help="Disable interactive prompts; fail on missing arguments.",
-        ),
-    ] = False,
     version: Annotated[
         bool | None,
         typer.Option(
@@ -147,29 +141,15 @@ def format_transcript(
     # --- Resolve template ---
     _template: str = template or DEFAULT_TEMPLATE
 
-    # --- Resolve input files ---
-    _files: list[Path]
-    if files:
-        _files = files
-    elif no_interactive:
-        err_console.print("[bold red]Error:[/bold red] At least one `.vtt` file path is required.")
-        raise typer.Exit(code=1)
-    else:
-        raw = typer.prompt("Enter one or more .vtt file paths (space or comma separated)")
-        _files = [Path(p.strip()) for p in raw.replace(",", " ").split() if p.strip()]
-        if not _files:
-            err_console.print("[bold red]Error:[/bold red] No valid file paths provided.")
-            raise typer.Exit(code=1)
-
     # --- Validate input files exist ---
-    missing = [f for f in _files if not f.exists()]
+    missing = [f for f in files if not f.exists()]
     if missing:
         for f in missing:
             err_console.print(f"[bold red]Error:[/bold red] File not found: [yellow]{f}[/yellow]")
         raise typer.Exit(code=1)
 
     # --- Warn about non-.vtt files ---
-    non_vtt = [f for f in _files if f.suffix.lower() != ".vtt"]
+    non_vtt = [f for f in files if f.suffix.lower() != ".vtt"]
     if non_vtt and verbose:
         names = ", ".join(str(f) for f in non_vtt)
         err_console.print(f"[yellow]Warning:[/yellow] Non-.vtt extension(s): {names}")
@@ -183,7 +163,7 @@ def format_transcript(
                     sys.stdout = devnull
                     try:
                         main(
-                            _files,
+                            files,
                             output_dir,
                             rename=_rename,
                             prefix=_prefix,
@@ -195,11 +175,11 @@ def format_transcript(
             else:
                 if verbose:
                     err_console.print(
-                        f"[dim]Processing {len(_files)} file(s), "
+                        f"[dim]Processing {len(files)} file(s), "
                         f"output: [cyan]{output_dir}[/cyan][/dim]"
                     )
                 main(
-                    _files,
+                    files,
                     output_dir,
                     rename=_rename,
                     prefix=_prefix,
@@ -208,7 +188,7 @@ def format_transcript(
                 )
         else:
             if not quiet:
-                for i, infile in enumerate(_files):
+                for i, infile in enumerate(files):
                     if verbose:
                         err_console.print(f"[dim]Processing: [cyan]{infile}[/cyan][/dim]")
                     raw = infile.read_text()
@@ -218,10 +198,10 @@ def format_transcript(
                         prefix=_prefix,
                         template=_template,
                     )
-                    if len(_files) > 1:
+                    if len(files) > 1:
                         print(f"--- {infile} ---")
                     print(formatted)
-                    if i < len(_files) - 1:
+                    if i < len(files) - 1:
                         print()
     except ValueError as exc:
         err_console.print(f"[bold red]Error:[/bold red] {exc}")

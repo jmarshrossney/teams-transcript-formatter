@@ -43,16 +43,16 @@ def sample_vtt_crlf(sample_vtt: str) -> str:
 @pytest.fixture
 def expected_output() -> str:
     lines = [
-        "> Interviewer | Hello, I am the interviewer. | 00:10",
+        "> Interviewer | Hello, I am the interviewer. | 00:00:10",
         "",
         (
             "< Student | Nice. I am the student being interviewed, "
-            "and I have many things to say. | 00:13"
+            "and I have many things to say. | 00:00:13"
         ),
         "",
-        "> Interviewer | Great, let me ask you another question. | 00:16",
+        "> Interviewer | Great, let me ask you another question. | 00:00:16",
         "",
-        "< Student | Sure, go ahead. | 00:20",
+        "< Student | Sure, go ahead. | 00:00:20",
     ]
     return "\n".join(lines)
 
@@ -98,9 +98,9 @@ def sample_vtt_adjacent() -> str:
 @pytest.fixture
 def sample_vtt_adjacent_expected() -> str:
     lines = [
-        "> Interviewer | First sentence. Second sentence. | 00:10",
+        "> Interviewer | First sentence. Second sentence. | 00:00:10",
         "",
-        "< Student | Response. | 00:14",
+        "< Student | Response. | 00:00:14",
     ]
     return "\n".join(lines)
 
@@ -127,9 +127,9 @@ def sample_vtt_multiline() -> str:
 @pytest.fixture
 def sample_vtt_multiline_expected() -> str:
     lines = [
-        "> Interviewer | This speech spans multiple lines in the vtt. | 00:10",
+        "> Interviewer | This speech spans multiple lines in the vtt. | 00:00:10",
         "",
-        "< Student | Response. | 00:15",
+        "< Student | Response. | 00:00:15",
     ]
     return "\n".join(lines)
 

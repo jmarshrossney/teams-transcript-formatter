@@ -13,10 +13,10 @@ class TestExtractTimestamp:
     @pytest.mark.parametrize(
         ("interval", "expected"),
         [
-            ("00:00:10.087 --> 00:00:13.130", "00:10"),
-            ("00:01:05.500 --> 00:01:08.200", "01:05"),
-            ("23:59:59.999 --> 00:00:00.000", "59:59"),
-            ("00:00:00.000 --> 00:00:05.000", "00:00"),
+            ("00:00:10.087 --> 00:00:13.130", "00:00:10"),
+            ("00:01:05.500 --> 00:01:08.200", "00:01:05"),
+            ("23:59:59.999 --> 00:00:00.000", "23:59:59"),
+            ("00:00:00.000 --> 00:00:05.000", "00:00:00"),
         ],
     )
     def test_extracts_mm_ss_from_interval(self, interval: str, expected: str) -> None:
@@ -122,7 +122,7 @@ class TestFormatTranscriptHappyPath:
             "<v Alice>Hi again.</v>\n"
         )
         result = _format_transcript(vtt)
-        assert result.startswith("Alice | Hello. Hi again. | 00:10")
+        assert result.startswith("Alice | Hello. Hi again. | 00:00:10")
 
     def test_three_speakers_is_valid(self) -> None:
         """A transcript with 3+ speakers should work fine."""
@@ -166,7 +166,7 @@ class TestFormatTranscriptHappyPath:
             rename={"Alice": "A", "Bob": "B"},
             template="{speaker}: {speech} [{timestamp}]",
         )
-        assert result == ("A: Hello. [00:10]\n\nB: Hi. [00:12]")
+        assert result == ("A: Hello. [00:00:10]\n\nB: Hi. [00:00:12]")
 
     def test_prefix_with_empty_value(self) -> None:
         vtt = "WEBVTT\n\nhash/0\n00:00:10.000 --> 00:00:12.000\n<v Alice>Hello.</v>\n"
@@ -175,11 +175,90 @@ class TestFormatTranscriptHappyPath:
             rename={"Alice": "A"},
             prefix={"A": ""},
         )
-        assert result == "A | Hello. | 00:10"
+        assert result == "A | Hello. | 00:00:10"
 
     def test_no_prefixes_given(self, sample_vtt_no_rename: str) -> None:
         result = _format_transcript(sample_vtt_no_rename, rename={"Alice": "A"})
         assert result.startswith("A | Hello.")
+
+    def test_speaker_name_with_special_characters(self) -> None:
+        vtt = (
+            "WEBVTT\n\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Dr. Smith-Jones>Hello.</v>\n\n"
+            "hash/1\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Dr. Smith-Jones>How are you?</v>\n"
+        )
+        result = _format_transcript(
+            vtt,
+            rename={"Dr. Smith-Jones": "Doctor"},
+            prefix={"Doctor": "> "},
+        )
+        assert result == ("> Doctor | Hello. How are you? | 00:00:10")
+
+    def test_vtt_with_header_metadata(self) -> None:
+        vtt = (
+            "WEBVTT\n"
+            "Kind: captions\n"
+            "Language: en\n"
+            "\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice>Hello.</v>\n"
+        )
+        result = _format_transcript(vtt)
+        assert "Alice | Hello. | 00:00:10" in result
+
+    def test_vtt_with_note_block(self) -> None:
+        vtt = (
+            "WEBVTT\n"
+            "\n"
+            "NOTE This is a comment\n"
+            "\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice>Hello.</v>\n"
+        )
+        result = _format_transcript(vtt)
+        assert "Alice | Hello. | 00:00:10" in result
+
+    def test_empty_speech_is_skipped(self) -> None:
+        vtt = (
+            "WEBVTT\n\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice></v>\n\n"
+            "hash/1\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Alice>Hello.</v>\n"
+        )
+        result = _format_transcript(vtt)
+        assert result == "Alice | Hello. | 00:00:12"
+
+    def test_whitespace_only_speech_is_skipped(self) -> None:
+        vtt = (
+            "WEBVTT\n\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice>   </v>\n\n"
+            "hash/1\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Alice>Hello.</v>\n"
+        )
+        result = _format_transcript(vtt)
+        assert result == "Alice | Hello. | 00:00:12"
+
+    def test_missing_v_closing_tag(self) -> None:
+        vtt = "WEBVTT\n\nhash/0\n00:00:10.000 --> 00:00:12.000\n<v Alice>Hello.\n"
+        result = _format_transcript(vtt)
+        assert result == "Alice | Hello. | 00:00:10"
+
+    def test_closing_v_tag_on_separate_line(self) -> None:
+        vtt = "WEBVTT\n\nhash/0\n00:00:10.000 --> 00:00:12.000\n<v Alice>Hello.\n</v>\n"
+        result = _format_transcript(vtt)
+        assert result == "Alice | Hello. | 00:00:10"
 
 
 class TestFormatTranscriptErrors:
@@ -300,6 +379,30 @@ class TestMain:
 
         assert outdir.is_dir()
         assert (outdir / "transcript_formatted.txt").is_file()
+
+    def test_returns_infile_outfile_pairs(
+        self,
+        tmp_path: Path,
+        sample_vtt: str,
+        interview_rename: dict,
+        interview_prefix: dict,
+    ) -> None:
+        infile1 = tmp_path / "transcript1.vtt"
+        infile2 = tmp_path / "transcript2.vtt"
+        infile1.write_text(sample_vtt)
+        infile2.write_text(sample_vtt)
+        outdir = tmp_path / "output"
+
+        results = main(
+            [infile1, infile2],
+            outdir,
+            rename=interview_rename,
+            prefix=interview_prefix,
+        )
+
+        assert len(results) == 2
+        assert results[0] == (infile1, outdir / "transcript1_formatted.txt")
+        assert results[1] == (infile2, outdir / "transcript2_formatted.txt")
 
 
 class TestIntegration:

@@ -17,7 +17,7 @@ _template_formatter = Formatter()
 def _extract_timestamp(interval: str) -> str:
     start_time = interval.split(" ")[0]
     parts = re.split(r"[:.]", start_time)
-    return f"{parts[1]}:{parts[2]}"
+    return f"{parts[0]}:{parts[1]}:{parts[2]}"
 
 
 def _format_transcript(
@@ -38,28 +38,53 @@ def _format_transcript(
     # Normalize Windows-style line endings
     transcript = transcript.replace("\r\n", "\n").replace("\r", "\n")
 
-    # Strip first line which should just contain `WEBVTT`, then
-    # split the transcript into chunks of speech
-    chunks = transcript.split("\n\n")
-    if not chunks or not chunks[0].startswith("WEBVTT"):
-        raise ValueError("Malformed or empty VTT file: expected the first line to contain 'WEBVTT'")
-    chunks = chunks[1:]
-    if not chunks:
-        raise ValueError("No speech chunks found after WEBVTT header")
+    lines = transcript.split("\n")
 
-    # Parse each chunk into a record in a single pass
+    # Validate WEBVTT header
+    if not lines or not lines[0].startswith("WEBVTT"):
+        raise ValueError("Malformed or empty VTT file: expected the first line to contain 'WEBVTT'")
+
+    # Parse cues: a cue starts when a line contains " --> "
+    # (the timestamp interval separator), which is the reliable identifier.
+    # This approach handles NOTE blocks, Style blocks, header metadata,
+    # and arbitrary blank lines between cues.
     records = []
-    for chunk in chunks:
-        _hash, interval, raw = chunk.split("\n", maxsplit=2)
-        timestamp = _extract_timestamp(interval)
-        raw = re.sub("<v |</v>", "", raw)
-        speaker, speech = raw.split(">", 1)
-        speech = speech.replace("\n", " ").strip()
-        if speech:
-            records.append({"timestamp": timestamp, "speaker": speaker, "speech": speech})
+    has_cues = False
+    i = 1  # skip WEBVTT line
+    while i < len(lines):
+        line = lines[i].strip()
+        if " --> " in line:
+            has_cues = True
+            interval = line
+            # Collect payload lines until blank line or EOF
+            i += 1
+            payload_lines = []
+            while i < len(lines) and lines[i].strip():
+                payload_lines.append(lines[i])
+                i += 1
+            raw = "\n".join(payload_lines)
+            timestamp = _extract_timestamp(interval)
+
+            # Extract speaker name from the opening <v> tag.
+            # Assumption: speaker names never contain ">", which holds for
+            # Microsoft Teams display names derived from Azure AD.
+            speaker_match = re.match(r"<v ([^>]+)>", raw)
+            if not speaker_match:
+                continue
+            speaker = speaker_match.group(1)
+
+            # Strip all voice tags to get the speech text
+            speech = re.sub(r"</?v[^>]*>", "", raw)
+            speech = speech.replace("\n", " ").strip()
+            if speech:
+                records.append({"timestamp": timestamp, "speaker": speaker, "speech": speech})
+        else:
+            i += 1
 
     # Assign contiguous block IDs: increment whenever the speaker changes
     if not records:
+        if not has_cues:
+            raise ValueError("No speech chunks found after WEBVTT header")
         return ""
     block = 1
     records[0]["block"] = block
@@ -108,8 +133,11 @@ def main(
     prefix: dict[str, str] | None = None,
     template: str = DEFAULT_TEMPLATE,
     force: bool = False,
-) -> None:
-    """Format a given list of `.vtt` transcript files and save the results."""
+) -> list[tuple[Path, Path]]:
+    """Format a given list of `.vtt` transcript files and save the results.
+
+    Returns a list of ``(infile, outfile)`` pairs for each processed file.
+    """
 
     if not isinstance(files, Iterable):
         raise TypeError(f"'files' must be an iterable, got {type(files)}")
@@ -123,6 +151,7 @@ def main(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    results: list[tuple[Path, Path]] = []
     for infile in files:
         with infile.open("r") as f:
             raw_transcript = f.read()
@@ -140,4 +169,6 @@ def main(
         with outfile.open("w") as file:
             file.write(formatted_transcript)
 
-        print(f"{infile} -> {outfile}")
+        results.append((infile, outfile))
+
+    return results

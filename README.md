@@ -1,5 +1,7 @@
 # Teams transcript formatter
 
+[![PyPI version](https://badge.fury.io/py/teams-transcript-formatter.svg)](https://pypi.org/project/teams-transcript-formatter/)
+
 The purpose of this package is to make Microsoft Teams meeting transcripts easier to read and analyse using tools such as [QualCoder](https://github.com/ccbogel/QualCoder).
 
 It processes `.vtt` transcripts downloaded from Microsoft Teams/Stream, merges adjacent blocks from the same speaker, and outputs a clean, formatted text file. Speaker names can optionally be renamed and assigned prefixes, and the output format is customisable via a template.
@@ -7,22 +9,24 @@ It processes `.vtt` transcripts downloaded from Microsoft Teams/Stream, merges a
 
 ## Installation
 
-This package is not yet on PyPI, so you must install directly from the GitHub repository.
+This package is available on PyPI.
 
 ### Run with `uvx`
 
 No installation required — run it once-off with [`uvx`](https://docs.astral.sh/uv/guides/tools/#running-tools):
 
 ```sh
-uvx --from git+https://github.com/jmarshrossney/teams-transcript-formatter teams-transcript-formatter transcript.vtt
+uvx teams-transcript-formatter transcript.vtt
 ```
 
-### Install as a tool with `uv`
+### Install with `pip` or `uv`
 
-Install globally with `uv tool install`:
+Install from PyPI:
 
 ```sh
-uv tool install git+https://github.com/jmarshrossney/teams-transcript-formatter
+pip install teams-transcript-formatter
+# or
+uv tool install teams-transcript-formatter
 ```
 
 After installation, `teams-transcript-formatter` will be available on your PATH:
@@ -40,6 +44,7 @@ git clone https://github.com/jmarshrossney/teams-transcript-formatter
 cd teams-transcript-formatter
 uv sync
 ```
+
 
 ## Usage
 
@@ -78,6 +83,7 @@ Run `teams-transcript-formatter -h` for full guidance, including shell completio
 | `-q`, `--quiet` | Suppress all non-error output |
 | `--version` | Show the version and exit |
 | `-h`, `--help` | Show the help message and exit |
+
 
 
 ## Examples
@@ -186,6 +192,7 @@ $ head -3 transcript_formatted.txt
 Student | Nice. I am the student being interviewed, and I have many things to say. | 00:00:13
 ```
 
+
 ## Privacy
 
 Speaker names can be replaced using the `--rename` flag. All other redactions of sensitive and identifiable information must be performed before running this script.
@@ -197,14 +204,14 @@ Remember to delete the original transcripts after running this script!
 
 ## Roadmap & contributing
 
-This is just something I threw together in a couple of hours because I needed it immediately and couldn't find anything similar elsewhere.
-
 There are some fairly simple additions that would make this more generally useful:
 
 - [x] Handle meetings with >2 participants
 - [x] User can configure how names are handled
 - [x] Configure the output format, e.g. using a template
 - [ ] Handle Zoom meetings
+- [ ] Output to different file formats (realistically, `.docx` would probably be the most useful to folks.)
 
-
-However, it's going to remain quite a low priority unless I can see it becoming useful to myself or colleagues.
+Suggestions for improvements are welcome.
+Contributions even more so!
+Just open an issue or pull request.

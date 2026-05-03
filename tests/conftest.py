@@ -1,13 +1,21 @@
+"""Shared test fixtures.
+
+The ``interview_rename`` and ``interview_prefix`` fixtures are coupled to
+the speaker names ("John Smith", "Jane Doe") in ``sample_vtt``.
+"""
+
 import pytest
 
 
 @pytest.fixture
 def interview_rename() -> dict[str, str]:
+    """Rename mapping matching speakers in ``sample_vtt``."""
     return {"John Smith": "Interviewer", "Jane Doe": "Student"}
 
 
 @pytest.fixture
 def interview_prefix() -> dict[str, str]:
+    """Prefix mapping for the renamed speakers from ``interview_rename``."""
     return {"Interviewer": "> ", "Student": "< "}
 
 

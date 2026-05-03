@@ -132,6 +132,14 @@ def _examples() -> list[dict]:
     return result
 
 
+def test_at_least_n_readme_examples():
+    examples = _examples()
+    assert len(examples) >= 6, (
+        f"Expected at least 6 README examples, found {len(examples)}. "
+        "Has the README format or regex changed?"
+    )
+
+
 @pytest.mark.parametrize(
     "example",
     _examples(),

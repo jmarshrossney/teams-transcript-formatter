@@ -45,6 +45,7 @@ cd teams-transcript-formatter
 uv sync
 ```
 
+
 ## Usage
 
 ### Command-line tool
@@ -82,6 +83,7 @@ Run `teams-transcript-formatter -h` for full guidance, including shell completio
 | `-q`, `--quiet` | Suppress all non-error output |
 | `--version` | Show the version and exit |
 | `-h`, `--help` | Show the help message and exit |
+
 
 
 ## Examples
@@ -190,6 +192,7 @@ $ head -3 transcript_formatted.txt
 Student | Nice. I am the student being interviewed, and I have many things to say. | 00:00:13
 ```
 
+
 ## Privacy
 
 Speaker names can be replaced using the `--rename` flag. All other redactions of sensitive and identifiable information must be performed before running this script.
@@ -201,14 +204,14 @@ Remember to delete the original transcripts after running this script!
 
 ## Roadmap & contributing
 
-This is just something I threw together in a couple of hours because I needed it immediately and couldn't find anything similar elsewhere.
-
 There are some fairly simple additions that would make this more generally useful:
 
 - [x] Handle meetings with >2 participants
 - [x] User can configure how names are handled
 - [x] Configure the output format, e.g. using a template
 - [ ] Handle Zoom meetings
+- [ ] Output to different file formats (realistically, `.docx` would probably be the most useful to folks.)
 
-
-However, it's going to remain quite a low priority unless I can see it becoming useful to myself or colleagues.
+Suggestions for improvements are welcome.
+Contributions even more so!
+Just open an issue or pull request.

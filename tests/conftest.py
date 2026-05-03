@@ -2,8 +2,13 @@ import pytest
 
 
 @pytest.fixture
-def interviewer() -> str:
-    return "John Smith"
+def interview_rename() -> dict[str, str]:
+    return {"John Smith": "Interviewer", "Jane Doe": "Student"}
+
+
+@pytest.fixture
+def interview_prefix() -> dict[str, str]:
+    return {"Interviewer": "> ", "Student": "< "}
 
 
 @pytest.fixture
@@ -70,40 +75,6 @@ def sample_vtt_no_webvtt() -> str:
 
 
 @pytest.fixture
-def sample_vtt_single_speaker() -> str:
-    return "\n".join(
-        [
-            "WEBVTT",
-            "",
-            "hash/0",
-            "00:00:10.000 --> 00:00:12.000",
-            "<v John Smith>First block.</v>",
-            "",
-            "hash/1",
-            "00:00:12.000 --> 00:00:14.000",
-            "<v John Smith>Second block.</v>",
-        ]
-    )
-
-
-@pytest.fixture
-def sample_vtt_wrong_interviewer() -> str:
-    return "\n".join(
-        [
-            "WEBVTT",
-            "",
-            "hash/0",
-            "00:00:10.000 --> 00:00:12.000",
-            "<v Alice>Hello.</v>",
-            "",
-            "hash/1",
-            "00:00:12.000 --> 00:00:14.000",
-            "<v Bob>Hi.</v>",
-        ]
-    )
-
-
-@pytest.fixture
 def sample_vtt_adjacent() -> str:
     return "\n".join(
         [
@@ -161,3 +132,58 @@ def sample_vtt_multiline_expected() -> str:
         "< Student | Response. | 00:15",
     ]
     return "\n".join(lines)
+
+
+@pytest.fixture
+def sample_vtt_no_rename() -> str:
+    return "\n".join(
+        [
+            "WEBVTT",
+            "",
+            "hash/0",
+            "00:00:10.000 --> 00:00:12.000",
+            "<v Alice>Hello.</v>",
+            "",
+            "hash/1",
+            "00:00:12.000 --> 00:00:14.000",
+            "<v Bob>Hi.</v>",
+        ]
+    )
+
+
+@pytest.fixture
+def sample_vtt_custom_template() -> str:
+    return "\n".join(
+        [
+            "WEBVTT",
+            "",
+            "hash/0",
+            "00:00:10.000 --> 00:00:12.000",
+            "<v Alice>Hello.</v>",
+            "",
+            "hash/1",
+            "00:00:12.000 --> 00:00:14.000",
+            "<v Bob>Hi.</v>",
+        ]
+    )
+
+
+@pytest.fixture
+def sample_vtt_partial_rename() -> str:
+    return "\n".join(
+        [
+            "WEBVTT",
+            "",
+            "hash/0",
+            "00:00:10.000 --> 00:00:12.000",
+            "<v Alice>Hello.</v>",
+            "",
+            "hash/1",
+            "00:00:12.000 --> 00:00:14.000",
+            "<v Bob>Hi there.</v>",
+            "",
+            "hash/2",
+            "00:00:14.000 --> 00:00:16.000",
+            "<v Carol>Greetings.</v>",
+        ]
+    )

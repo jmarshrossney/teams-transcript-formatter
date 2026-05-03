@@ -1,0 +1,57 @@
+WEBVTT
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-0
+00:00:10.087 --> 00:00:13.130
+<v John Smith>Hello, I am the interviewer.</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-1
+00:00:13.130 --> 00:00:16.270
+<v Jane Doe>Nice. I am the student being interviewed,
+and I have many things to say.</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-2
+00:00:16.270 --> 00:00:20.000
+<v John Smith>Great, let me ask you another question.</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-3
+00:00:20.000 --> 00:00:25.500
+<v Jane Doe>Sure, go ahead.</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-4
+00:00:25.500 --> 00:00:32.000
+<v John Smith>Can you tell me about a time you faced
+a difficult technical challenge and how
+you approached solving it?</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-5
+00:00:32.000 --> 00:00:38.500
+<v Jane Doe>One example that comes to mind is when I was working
+on a Python CLI tool that formatted interview transcripts.
+I had to figure out how to parse VTT files reliably.</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-6
+00:00:38.500 --> 00:00:42.000
+<v John Smith>That sounds interesting. What was the trickiest part?</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-7
+00:00:42.000 --> 00:00:48.000
+<v Jane Doe>Handling the edge cases — multiline speech, Windows line endings,
+and making sure adjacent blocks from the same speaker
+get merged properly.</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-8
+00:00:48.000 --> 00:00:52.000
+<v John Smith>And how did you validate your solution?</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-9
+00:00:52.000 --> 00:00:57.000
+<v Jane Doe>I wrote a comprehensive test suite using pytest,
+covering all the edge cases I could think of.</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-10
+00:00:57.000 --> 00:00:59.000
+<v John Smith>Excellent. Thank you for sharing that.</v>
+
+91b3f3c3-44c6-4a8b-8c0a-add105d816bd/32-11
+00:00:59.000 --> 00:01:02.000
+<v Jane Doe>Thank you for the opportunity to interview.</v>

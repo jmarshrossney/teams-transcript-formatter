@@ -4,18 +4,21 @@ build-backend = "uv_build"
 
 [project]
 name = "teams-transcript-formatter"
-version = "0.2.1"
+version = "0.3.0"
 authors = [{name = "Joe Marsh Rossney", email = "17361029+jmarshrossney@users.noreply.github.com"}]
 description = "Human-readable Microsoft Teams meeting transcripts"
 readme = "README.md"
 requires-python = ">= 3.12"
-dependencies = []
+dependencies = [
+    "typer>=0.15",
+    "rich>=13",
+]
 
 [project.urls]
 Repository = "https://github.com/jmarshrossney/teams-transcript-formatter"
 
 [project.scripts]
-teams-transcript-formatter = "teams_transcript_formatter.main:cli"
+teams-transcript-formatter = "teams_transcript_formatter.cli:app"
 
 [dependency-groups]
 dev = [

@@ -5,6 +5,6 @@ repos:
         name: just
         language: system
         pass_filenames: false
-        entry: just lint typecheck test
+        entry: just
         stages: [pre-commit]
         verbose: true

@@ -1,7 +1,7 @@
 _:
   @just lint typecheck test
 
-# Format and lint the package using ruff, and lint the examples using marimo.
+# Format and lint the package using ruff.
 lint:
   ruff format
   ruff check

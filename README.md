@@ -31,12 +31,6 @@ After installation, `teams-transcript-formatter` will be available on your PATH:
 teams-transcript-formatter transcript.vtt
 ```
 
-### Install with pip
-
-```sh
-python -m pip install git+https://github.com/jmarshrossney/teams-transcript-formatter
-```
-
 ### From source
 
 If you want to make changes to the source code you can clone the repository and install in editable mode:
@@ -44,7 +38,7 @@ If you want to make changes to the source code you can clone the repository and 
 ```sh
 git clone https://github.com/jmarshrossney/teams-transcript-formatter
 cd teams-transcript-formatter
-python -m pip install -e .
+uv sync
 ```
 
 ## Usage
@@ -112,9 +106,9 @@ No flags — original speaker names and default template.
 ```sh
 $ teams-transcript-formatter transcript.vtt
 $ head -3 transcript_formatted.txt
-John Smith | Hello, I am the interviewer. | 00:10
+John Smith | Hello, I am the interviewer. | 00:00:10
 
-Jane Doe | Nice. I am the student being interviewed, and I have many things to say. | 00:13
+Jane Doe | Nice. I am the student being interviewed, and I have many things to say. | 00:00:13
 ```
 
 ### Rename speakers
@@ -126,9 +120,9 @@ $ teams-transcript-formatter \
     --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
     transcript.vtt
 $ head -3 transcript_formatted.txt
-Interviewer | Hello, I am the interviewer. | 00:10
+Interviewer | Hello, I am the interviewer. | 00:00:10
 
-Student | Nice. I am the student being interviewed, and I have many things to say. | 00:13
+Student | Nice. I am the student being interviewed, and I have many things to say. | 00:00:13
 ```
 
 ### Add prefixes
@@ -141,9 +135,9 @@ $ teams-transcript-formatter \
     --prefix "Interviewer=> " --prefix "Student=< " \
     transcript.vtt
 $ head -3 transcript_formatted.txt
-> Interviewer | Hello, I am the interviewer. | 00:10
+> Interviewer | Hello, I am the interviewer. | 00:00:10
 
-< Student | Nice. I am the student being interviewed, and I have many things to say. | 00:13
+< Student | Nice. I am the student being interviewed, and I have many things to say. | 00:00:13
 ```
 
 ### Custom output template
@@ -156,9 +150,9 @@ $ teams-transcript-formatter \
     --template "[{timestamp}] {speaker}: {speech}" \
     transcript.vtt
 $ head -3 transcript_formatted.txt
-[00:10] JS: Hello, I am the interviewer.
+[00:00:10] JS: Hello, I am the interviewer.
 
-[00:13] JD: Nice. I am the student being interviewed, and I have many things to say.
+[00:00:13] JD: Nice. I am the student being interviewed, and I have many things to say.
 ```
 
 ### Full customisation
@@ -172,9 +166,9 @@ $ teams-transcript-formatter \
     --template "{prefix}{speaker}: {speech} [{timestamp}]" \
     transcript.vtt
 $ head -3 transcript_formatted.txt
-> Interviewer: Hello, I am the interviewer. [00:10]
+> Interviewer: Hello, I am the interviewer. [00:00:10]
 
-< Student: Nice. I am the student being interviewed, and I have many things to say. [00:13]
+< Student: Nice. I am the student being interviewed, and I have many things to say. [00:00:13]
 ```
 
 ### Selective prefixes
@@ -187,9 +181,9 @@ $ teams-transcript-formatter \
     --prefix "Interviewer=> " --prefix "Student=" \
     transcript.vtt
 $ head -3 transcript_formatted.txt
-> Interviewer | Hello, I am the interviewer. | 00:10
+> Interviewer | Hello, I am the interviewer. | 00:00:10
 
-Student | Nice. I am the student being interviewed, and I have many things to say. | 00:13
+Student | Nice. I am the student being interviewed, and I have many things to say. | 00:00:13
 ```
 
 ## Privacy

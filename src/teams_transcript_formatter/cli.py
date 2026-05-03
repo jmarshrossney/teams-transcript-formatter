@@ -5,8 +5,6 @@ Provides the `teams-transcript-formatter` command with --help/-h,
 shell completion, and rich-formatted output.
 """
 
-import os
-import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -15,8 +13,10 @@ from rich.console import Console
 
 from teams_transcript_formatter.formatter import (
     DEFAULT_TEMPLATE,
-    _format_transcript,
-    main,
+    process_files,
+)
+from teams_transcript_formatter.formatter import (
+    format_transcript as fmt_transcript,
 )
 
 err_console = Console(stderr=True)
@@ -149,39 +149,27 @@ def format_transcript(
     # --- Run ---
     try:
         if output_dir is not None:
-            if quiet:
-                with open(os.devnull, "w") as devnull:
-                    old_stdout = sys.stdout
-                    sys.stdout = devnull
-                    try:
-                        main(
-                            files,
-                            output_dir,
-                            rename=_rename,
-                            prefix=_prefix,
-                            template=_template,
-                            force=force,
-                        )
-                    finally:
-                        sys.stdout = old_stdout
-            else:
+            if not quiet:
                 err_console.print(
                     f"[dim]Processing {len(files)} file(s), output: [cyan]{output_dir}[/cyan][/dim]"
                 )
-                main(
-                    files,
-                    output_dir,
-                    rename=_rename,
-                    prefix=_prefix,
-                    template=_template,
-                    force=force,
-                )
+            results = process_files(
+                files,
+                output_dir,
+                rename=_rename,
+                prefix=_prefix,
+                template=_template,
+                force=force,
+            )
+            if not quiet:
+                for infile, outfile in results:
+                    err_console.print(f"{infile} -> {outfile}")
         else:
             if not quiet:
                 for i, infile in enumerate(files):
                     err_console.print(f"[dim]Processing: [cyan]{infile}[/cyan][/dim]")
                     raw = infile.read_text()
-                    formatted = _format_transcript(
+                    formatted = fmt_transcript(
                         raw,
                         rename=_rename,
                         prefix=_prefix,

@@ -31,12 +31,6 @@ After installation, `teams-transcript-formatter` will be available on your PATH:
 teams-transcript-formatter transcript.vtt
 ```
 
-### Install with pip
-
-```sh
-python -m pip install git+https://github.com/jmarshrossney/teams-transcript-formatter
-```
-
 ### From source
 
 If you want to make changes to the source code you can clone the repository and install in editable mode:
@@ -44,7 +38,7 @@ If you want to make changes to the source code you can clone the repository and 
 ```sh
 git clone https://github.com/jmarshrossney/teams-transcript-formatter
 cd teams-transcript-formatter
-python -m pip install -e .
+uv sync
 ```
 
 ## Usage

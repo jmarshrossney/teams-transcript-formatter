@@ -42,22 +42,38 @@ def _iter_readme_examples() -> Generator[tuple[str, str, int, str], None, None]:
             raise ValueError(f"No code fence found in example: {title}")
         code = code_match.group(1)
 
-        # Locate the ``$ head -N`` line
+        # Locate the ``$ head -N`` line (file-output examples)
         head_match = re.search(
             r"^\$ head -(\d+) transcript_formatted\.txt\n",
             code,
             re.MULTILINE,
         )
-        if not head_match:
-            raise ValueError(f"No 'head -N' line found in example: {title}")
-        head_lines = int(head_match.group(1))
 
-        # Split: everything before the head line is the command,
-        # everything after is the expected output
-        header = code[: head_match.start()]
-        expected_output = code[head_match.end() :].rstrip("\n")
-
-        command = _join_command_lines(header)
+        if head_match:
+            head_lines = int(head_match.group(1))
+            header = code[: head_match.start()]
+            expected_output = code[head_match.end() :].rstrip("\n")
+            command = _join_command_lines(header)
+        else:
+            # Stdout output pattern: collect command lines, rest is output
+            code_lines = code.strip().split("\n")
+            cmd_end = 0
+            i = 0
+            while i < len(code_lines):
+                stripped = code_lines[i].strip()
+                if stripped.startswith("$ "):
+                    cmd_end = i + 1
+                    # Collect continuation lines (ending with backslash)
+                    i += 1
+                    while i < len(code_lines) and code_lines[i - 1].strip().endswith("\\"):
+                        cmd_end = i + 1
+                        i += 1
+                else:
+                    break
+            header = "\n".join(code_lines[:cmd_end])
+            command = _join_command_lines(header)
+            expected_output = "\n".join(code_lines[cmd_end:]).rstrip("\n")
+            head_lines = len(code_lines[cmd_end:])
 
         yield title, command, head_lines, expected_output
 

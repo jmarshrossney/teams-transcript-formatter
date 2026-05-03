@@ -50,7 +50,7 @@ uv sync
 
 ### Command-line tool
 
-The `teams-transcript-formatter` script takes one or more `.vtt` files and produces formatted files with the naming convention `<original_stem>_formatted.txt`. Optionally, you may also specify a directory for the formatted files using the `-o` flag (the default is the current working directory).
+The `teams-transcript-formatter` script takes one or more `.vtt` files and prints the formatted output to stdout. To save the output to `.txt` files instead (with the naming convention `<original_stem>_formatted.txt`), use the `-o` flag to specify an output directory.
 
 ```sh
 # Basic: keep original speaker names, default formatting
@@ -78,7 +78,7 @@ Run `teams-transcript-formatter -h` for full guidance, including shell completio
 | `--rename` | Map original speaker names to display names: `"OriginalName=DisplayName"`. Repeat for each speaker. |
 | `--prefix` | Assign a prefix to each display name: `"DisplayName=>"`. Repeat for each speaker. |
 | `--template` | Python format string for output. Placeholders: `{prefix}`, `{speaker}`, `{speech}`, `{timestamp}`. |
-| `-o`, `--output` | Output directory for `.txt` files (default: `.`) |
+| `-o`, `--output` | Directory to save `.txt` files. If not given, prints to stdout. |
 | `--force` | Overwrite existing output files instead of refusing |
 | `-q`, `--quiet` | Suppress all non-error output |
 | `--version` | Show the version and exit |
@@ -107,11 +107,10 @@ and I have many things to say.</v>
 
 ### Default format
 
-No flags — original speaker names and default template.
+No flags — original speaker names, default template, print to stdout.
 
 ```sh
 $ teams-transcript-formatter transcript.vtt
-$ head -3 transcript_formatted.txt
 John Smith | Hello, I am the interviewer. | 00:00:10
 
 Jane Doe | Nice. I am the student being interviewed, and I have many things to say. | 00:00:13
@@ -124,7 +123,7 @@ Map original names to display names with `--rename`.
 ```sh
 $ teams-transcript-formatter \
     --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
-    transcript.vtt
+    -o . transcript.vtt
 $ head -3 transcript_formatted.txt
 Interviewer | Hello, I am the interviewer. | 00:00:10
 
@@ -139,7 +138,7 @@ Combine `--rename` with `--prefix` to visually distinguish speakers. Prefixes ar
 $ teams-transcript-formatter \
     --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
     --prefix "Interviewer=> " --prefix "Student=< " \
-    transcript.vtt
+    -o . transcript.vtt
 $ head -3 transcript_formatted.txt
 > Interviewer | Hello, I am the interviewer. | 00:00:10
 
@@ -154,7 +153,7 @@ Control the output format with `--template`. Available placeholders: `{prefix}`,
 $ teams-transcript-formatter \
     --rename "John Smith=JS" --rename "Jane Doe=JD" \
     --template "[{timestamp}] {speaker}: {speech}" \
-    transcript.vtt
+    -o . transcript.vtt
 $ head -3 transcript_formatted.txt
 [00:00:10] JS: Hello, I am the interviewer.
 
@@ -170,7 +169,7 @@ $ teams-transcript-formatter \
     --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
     --prefix "Interviewer=> " --prefix "Student=< " \
     --template "{prefix}{speaker}: {speech} [{timestamp}]" \
-    transcript.vtt
+    -o . transcript.vtt
 $ head -3 transcript_formatted.txt
 > Interviewer: Hello, I am the interviewer. [00:00:10]
 
@@ -185,7 +184,7 @@ Pass an empty value to `--prefix` to suppress the prefix for a given speaker.
 $ teams-transcript-formatter \
     --rename "John Smith=Interviewer" --rename "Jane Doe=Student" \
     --prefix "Interviewer=> " --prefix "Student=" \
-    transcript.vtt
+    -o . transcript.vtt
 $ head -3 transcript_formatted.txt
 > Interviewer | Hello, I am the interviewer. | 00:00:10
 

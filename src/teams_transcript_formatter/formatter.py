@@ -14,13 +14,13 @@ DEFAULT_TEMPLATE = "{prefix}{speaker} | {speech} | {timestamp}"
 _template_formatter = Formatter()
 
 
-def _extract_timestamp(interval: str) -> str:
+def extract_timestamp(interval: str) -> str:
     start_time = interval.split(" ")[0]
     parts = re.split(r"[:.]", start_time)
     return f"{parts[0]}:{parts[1]}:{parts[2]}"
 
 
-def _format_transcript(
+def format_transcript(
     transcript: str,
     rename: dict[str, str] | None = None,
     prefix: dict[str, str] | None = None,
@@ -63,7 +63,7 @@ def _format_transcript(
                 payload_lines.append(lines[i])
                 i += 1
             raw = "\n".join(payload_lines)
-            timestamp = _extract_timestamp(interval)
+            timestamp = extract_timestamp(interval)
 
             # Extract speaker name from the opening <v> tag.
             # Assumption: speaker names never contain ">", which holds for
@@ -126,7 +126,7 @@ def _format_transcript(
     return formatted_transcript
 
 
-def main(
+def process_files(
     files: list[Path],
     output_dir: Path,
     rename: dict[str, str] | None = None,
@@ -156,7 +156,7 @@ def main(
         with infile.open("r") as f:
             raw_transcript = f.read()
 
-        formatted_transcript = _format_transcript(
+        formatted_transcript = format_transcript(
             raw_transcript, rename=rename, prefix=prefix, template=template
         )
 

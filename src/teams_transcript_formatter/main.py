@@ -8,7 +8,7 @@ This module is kept for backwards compatibility. The core logic lives in
 
 from teams_transcript_formatter.formatter import (  # noqa: F401
     DEFAULT_TEMPLATE,
-    _extract_timestamp,
-    _format_transcript,
-    main,
+    extract_timestamp,
+    format_transcript,
+    process_files,
 )

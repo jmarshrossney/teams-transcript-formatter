@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from teams_transcript_formatter.formatter import _format_transcript
+from teams_transcript_formatter.formatter import format_transcript
 
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
@@ -140,7 +140,7 @@ def _examples() -> list[dict]:
 def test_readme_example_matches_output(example: dict) -> None:
     """Each example in README.md should produce the documented output."""
     vtt_content = EXAMPLE_VTT.read_text()
-    result = _format_transcript(vtt_content, **example["kwargs"])
+    result = format_transcript(vtt_content, **example["kwargs"])
 
     lines = result.split("\n")
     actual_head = "\n".join(lines[: example["head_lines"]])

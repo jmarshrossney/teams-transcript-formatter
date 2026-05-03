@@ -7,22 +7,24 @@ It processes `.vtt` transcripts downloaded from Microsoft Teams/Stream, merges a
 
 ## Installation
 
-This package is not yet on PyPI, so you must install directly from the GitHub repository.
+This package is available on PyPI.
 
 ### Run with `uvx`
 
 No installation required — run it once-off with [`uvx`](https://docs.astral.sh/uv/guides/tools/#running-tools):
 
 ```sh
-uvx --from git+https://github.com/jmarshrossney/teams-transcript-formatter teams-transcript-formatter transcript.vtt
+uvx teams-transcript-formatter transcript.vtt
 ```
 
-### Install as a tool with `uv`
+### Install with `pip` or `uv`
 
-Install globally with `uv tool install`:
+Install from PyPI:
 
 ```sh
-uv tool install git+https://github.com/jmarshrossney/teams-transcript-formatter
+pip install teams-transcript-formatter
+# or
+uv tool install teams-transcript-formatter
 ```
 
 After installation, `teams-transcript-formatter` will be available on your PATH:

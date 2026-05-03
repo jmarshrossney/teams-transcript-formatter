@@ -260,6 +260,68 @@ class TestFormatTranscriptHappyPath:
         result = format_transcript(vtt)
         assert result == "Alice | Hello. | 00:00:10"
 
+    def test_chunk_with_no_speech_payload_is_skipped(self) -> None:
+        vtt = (
+            "WEBVTT\n\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "\n"
+            "hash/1\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Alice>Hello.</v>\n"
+        )
+        result = format_transcript(vtt)
+        assert result == "Alice | Hello. | 00:00:12"
+
+    def test_extra_blank_lines_between_chunks(self) -> None:
+        vtt = (
+            "WEBVTT\n\n\n\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice>Hello.</v>\n\n\n\n"
+            "hash/1\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Bob>Hi.</v>\n"
+        )
+        result = format_transcript(vtt)
+        assert "Alice | Hello. | 00:00:10" in result
+        assert "Bob | Hi. | 00:00:12" in result
+
+    def test_missing_hash_line_still_works(self) -> None:
+        vtt = (
+            "WEBVTT\n\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice>Hello.</v>\n\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Bob>Hi.</v>\n"
+        )
+        result = format_transcript(vtt)
+        assert "Alice | Hello. | 00:00:10" in result
+        assert "Bob | Hi. | 00:00:12" in result
+
+    def test_all_empty_speech_returns_empty_string(self) -> None:
+        vtt = (
+            "WEBVTT\n\n"
+            "hash/0\n"
+            "00:00:10.000 --> 00:00:12.000\n"
+            "<v Alice>   </v>\n\n"
+            "hash/1\n"
+            "00:00:12.000 --> 00:00:14.000\n"
+            "<v Alice>   </v>\n"
+        )
+        result = format_transcript(vtt)
+        assert result == ""
+
+    def test_template_with_format_specifiers(self) -> None:
+        vtt = "WEBVTT\n\nhash/0\n00:00:10.000 --> 00:00:12.000\n<v Alice>Hello.</v>\n"
+        result = format_transcript(vtt, template="{speaker!r}: {speech} [{timestamp}]")
+        assert result == "'Alice': Hello. [00:00:10]"
+
+    def test_template_with_field_width_specifier(self) -> None:
+        vtt = "WEBVTT\n\nhash/0\n00:00:10.000 --> 00:00:12.000\n<v Alice>Hello.</v>\n"
+        result = format_transcript(vtt, template="{speaker:>10}: {speech}")
+        assert result == "     Alice: Hello."
+
 
 class TestFormatTranscriptErrors:
     def test_missing_webvtt_header_raises_value_error(

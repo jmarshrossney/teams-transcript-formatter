@@ -1,6 +1,8 @@
 # Teams transcript formatter
 
-[![PyPI version](https://badge.fury.io/py/teams-transcript-formatter.svg)](https://pypi.org/project/teams-transcript-formatter/)
+[![PyPI version](https://img.shields.io/pypi/v/teams-transcript-formatter)](https://pypi.org/project/teams-transcript-formatter/)
+[![Python versions](https://img.shields.io/pypi/pyversions/teams-transcript-formatter)](https://pypi.org/project/teams-transcript-formatter/)
+[![License](https://img.shields.io/pypi/l/teams-transcript-formatter)](https://github.com/jmarshrossney/teams-transcript-formatter/blob/main/LICENSE)
 
 The purpose of this package is to make Microsoft Teams meeting transcripts easier to read and analyse using tools such as [QualCoder](https://github.com/ccbogel/QualCoder).
 
@@ -8,8 +10,6 @@ It processes `.vtt` transcripts downloaded from Microsoft Teams/Stream, merges a
 
 
 ## Installation
-
-This package is available on PyPI.
 
 ### Run with `uvx`
 

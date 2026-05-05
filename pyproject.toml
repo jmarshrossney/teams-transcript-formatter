@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "teams-transcript-formatter"
-version = "0.3.2"
+version = "0.3.3"
 description = "Human-readable Microsoft Teams meeting transcripts."
 authors = [
     { name = "Joe Marsh Rossney", email = "17361029+jmarshrossney@users.noreply.github.com" }

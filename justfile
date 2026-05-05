@@ -4,7 +4,7 @@ _:
 # Format and lint the package using ruff.
 lint:
   ruff format
-  ruff check
+  ruff check --fix
 
 # Run static type checker.
 typecheck:
